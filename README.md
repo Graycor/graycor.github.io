@@ -1,13 +1,13 @@
-# graycor.github.io
-
-<html>
-  
-  <head>
-    <title>This is the title of the webpage!</title>
-  </head>
-  <body style="background-color:powderblue;">
-  <body>
 <img src="images/logo.png" alt="DTA Logo" width="601" height="128">
+
+# Simple, clear and fast public services
+
+<title>DTA Test Page</title>
+
+<body style="background-color:#313131;">
+
+<body>
+
     
 <span style="color:blue">some *This is Blue italic.* text</span>
 
