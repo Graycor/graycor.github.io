@@ -1,6 +1,6 @@
-<img src="images/logo.png" alt="DTA Logo" width="601" height="128">
-<br>
-<span style="color:#45C2F0">some *Simple, clear and fast public services* text</span>
+<img src="/images/logo.png" alt="DTA Logo" width="601" height="128">
+
+<span style="color:#45C2F0">**Simple, clear and fast public services**</span>
 
 <title>DTA Test Page</title>
 
