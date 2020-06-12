@@ -10,6 +10,8 @@
   
 ![DTA Logo](https://www.dta.gov.au/themes/custom/dta-gov-au/logo.png)  
 
+<span style="color:blue">some *This is Blue italic.* text</span>
+
     <p>This is an example paragraph. Anything in the <strong>body</strong> tag will appear on the page, just like this <strong>p</strong> tag and its contents.</p>
 
 <li id="" role="none"
