@@ -7,7 +7,7 @@
   </head>
   <body style="background-color:powderblue;">
   <body>
-  
+<img src="https://www.dta.gov.au/themes/custom/dta-gov-au/logo.png" alt="DTA Logo" width="601" height="128">
 ![DTA Logo](https://www.dta.gov.au/themes/custom/dta-gov-au/logo.png)  
 
 <span style="color:blue">some *This is Blue italic.* text</span>
