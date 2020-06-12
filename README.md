@@ -1,6 +1,5 @@
 # graycor.github.io
 
-<!doctype html>
 <html>
   
   <head>
@@ -8,7 +7,9 @@
   </head>
   
   <body>
+  
 ![DTA Logo](https://www.dta.gov.au/themes/custom/dta-gov-au/logo.png)  
+
     <p>This is an example paragraph. Anything in the <strong>body</strong> tag will appear on the page, just like this <strong>p</strong> tag and its contents.</p>
 
 <li id="" role="none"
@@ -18,7 +19,6 @@
     ><a href="/news-blogs/all" class="sf-depth-1">News and blogs</a></li><li id="" role="none"
     ><a href="/digital-transformation-strategy" class="sf-depth-1">Digital Transformation Strategy</a></li><li id="" role="none"
     ><a href="/contact-us" class="sf-depth-1">Contact us</a></li>
-</ul>
 
   </body>
   
