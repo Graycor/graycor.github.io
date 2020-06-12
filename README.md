@@ -7,9 +7,8 @@
   </head>
   <body style="background-color:powderblue;">
   <body>
-<img src="https://www.dta.gov.au/themes/custom/dta-gov-au/logo.png" alt="DTA Logo" width="601" height="128">
-![DTA Logo](https://www.dta.gov.au/themes/custom/dta-gov-au/logo.png)  
-
+<img src="images/logo.png" alt="DTA Logo" width="601" height="128">
+    
 <span style="color:blue">some *This is Blue italic.* text</span>
 
     <p>This is an example paragraph. Anything in the <strong>body</strong> tag will appear on the page, just like this <strong>p</strong> tag and its contents.</p>
@@ -23,5 +22,3 @@
     ><a href="/contact-us" class="sf-depth-1">Contact us</a></li>
 
   </body>
-  
-</html>
