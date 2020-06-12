@@ -1,10 +1,8 @@
-<img src="/images/logo.png" alt="DTA Logo" width="601" height="128">
-
 <a href="https://www.dta.gov.au/">
-<img src="/images/logo.png" alt="DTA Logo" width="601" height="128" background-color: transparent;border: none;>
+<img src="https://graycor.github.io/images/logo.png" alt="DTA Logo" width="601" height="128" background-color: transparent;border: none;>
 </a>
 
-<span style="color:#45C2F0">**Simple, clear and fast public services**</span>
+<span style="color:#45C2F0 font-size: 15px>**Simple, clear and fast public services**</span>
 
 <title>DTA Test Page</title>
 
