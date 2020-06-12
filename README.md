@@ -1,6 +1,6 @@
 <img src="images/logo.png" alt="DTA Logo" width="601" height="128">
-
-# Simple, clear and fast public services
+<br>
+<span style="color:#45C2F0">some *Simple, clear and fast public services* text</span>
 
 <title>DTA Test Page</title>
 
@@ -9,7 +9,7 @@
 <body>
 
     
-<span style="color:blue">some *This is Blue italic.* text</span>
+
 
     <p>This is an example paragraph. Anything in the <strong>body</strong> tag will appear on the page, just like this <strong>p</strong> tag and its contents.</p>
 
