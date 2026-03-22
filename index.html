@@ -598,6 +598,13 @@
       <div id="scanListWrap" style="display:none;">
         <div class="scan-list-header">
           <span class="scan-list-title">Scanned this session</span>
+          <button class="btn btn-ghost" id="copyBtn" onclick="copyToClipboard()" style="padding:5px 12px;font-size:11px;">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <rect x="4" y="4" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M3 8H2a1 1 0 01-1-1V2a1 1 0 011-1h5a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            Copy List
+          </button>
         </div>
         <ul class="scan-list" id="scanList"></ul>
       </div>
@@ -819,7 +826,6 @@
     const li = document.createElement('li');
     li.className = 'scan-item';
     li.innerHTML = `
-      <span class="scan-num">${count}</span>
       <span class="scan-code">${escapeHtml(latest.code)}</span>
     `;
     scanList.prepend(li); // newest on top
@@ -836,7 +842,7 @@
     if (scans.length === 0) return;
 
     const dateStr = new Date().toISOString().slice(0, 10);
-    const lines = ['barcode', ...scans.map(s => s.code)];
+    const lines = ['barcode\ttimestamp', ...scans.map(s => `${s.code}\t${s.timestamp}`)];
     const txt = lines.join('\r\n');
 
     const blob = new Blob([txt], { type: 'text/plain;charset=utf-8;' });
@@ -855,6 +861,25 @@
     lastScannedTime = 0;
     document.getElementById('scanList').innerHTML = '';
     updateUI();
+  }
+
+  function copyToClipboard() {
+    if (scans.length === 0) return;
+    const text = scans.map(s => s.code).join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      const original = btn.innerHTML;
+      btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="var(--green)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Copied!`;
+      btn.style.color = 'var(--green)';
+      btn.style.borderColor = 'rgba(94,203,138,0.4)';
+      setTimeout(() => {
+        btn.innerHTML = original;
+        btn.style.color = '';
+        btn.style.borderColor = '';
+      }, 2000);
+    }).catch(() => {
+      alert('Could not access clipboard. Try downloading instead.');
+    });
   }
 
   // ─────────────────────────────────────────────
