@@ -837,14 +837,14 @@
     if (scans.length === 0) return;
 
     const dateStr = new Date().toISOString().slice(0, 10);
-    const lines = ['barcode,timestamp', ...scans.map(s => `"${s.code}","${s.timestamp}"`)];
-    const csv = lines.join('\n');
+    const lines = ['barcode\ttimestamp', ...scans.map(s => `${s.code}\t${s.timestamp}`)];
+    const txt = lines.join('\r\n');
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `bookscan-${dateStr}.csv`;
+    a.download = `bookscan-${dateStr}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
