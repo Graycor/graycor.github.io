@@ -821,7 +821,6 @@
     li.innerHTML = `
       <span class="scan-num">${count}</span>
       <span class="scan-code">${escapeHtml(latest.code)}</span>
-      <span class="scan-time">${latest.timestamp}</span>
     `;
     scanList.prepend(li); // newest on top
   }
@@ -837,7 +836,7 @@
     if (scans.length === 0) return;
 
     const dateStr = new Date().toISOString().slice(0, 10);
-    const lines = ['barcode\ttimestamp', ...scans.map(s => `${s.code}\t${s.timestamp}`)];
+    const lines = ['barcode', ...scans.map(s => s.code)];
     const txt = lines.join('\r\n');
 
     const blob = new Blob([txt], { type: 'text/plain;charset=utf-8;' });
