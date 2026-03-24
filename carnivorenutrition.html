@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carnivore Diet — Nutritional Coverage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0b09;
+    --surface: #141210;
+    --surface2: #1c1915;
+    --border: #2e2820;
+    --border-light: #3d3228;
+    --amber: #c97b2a;
+    --amber-bright: #e8952f;
+    --amber-dim: #7a4a18;
+    --cream: #e8dcc8;
+    --cream-dim: #a89880;
+    --text: #d4c5ae;
+    --text-dim: #7d6e5a;
+    --red: #9e3a2a;
+    --green: #3a6e4a;
+    --green-bright: #4a9060;
+    --row-alt: rgba(255,255,255,0.018);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── MODAL ─────────────────────────────────────────────── */
+  #modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+
+  #modal {
+    background: var(--surface);
+    border: 1px solid var(--amber-dim);
+    max-width: 620px;
+    width: 100%;
+    padding: 48px;
+    position: relative;
+    box-shadow: 0 0 60px rgba(201,123,42,0.12), 0 0 0 1px rgba(201,123,42,0.06);
+  }
+
+  #modal::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--amber), transparent);
+  }
+
+  .modal-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 20px;
+  }
+
+  #modal h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--cream);
+    line-height: 1.3;
+    margin-bottom: 24px;
+  }
+
+  .modal-rule {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+
+  #modal p {
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: var(--cream-dim);
+    margin-bottom: 14px;
+  }
+
+  #modal p strong {
+    color: var(--cream);
+    font-weight: 500;
+  }
+
+  .modal-checkbox-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin: 28px 0 32px;
+    padding: 20px;
+    background: rgba(201,123,42,0.05);
+    border: 1px solid var(--border-light);
+  }
+
+  .modal-checkbox-row input[type="checkbox"] {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--amber-dim);
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: background 0.2s, border-color 0.2s;
+    position: relative;
+  }
+
+  .modal-checkbox-row input[type="checkbox"]:checked {
+    background: var(--amber);
+    border-color: var(--amber);
+  }
+
+  .modal-checkbox-row input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: #000;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .modal-checkbox-row label {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--cream);
+    cursor: pointer;
+  }
+
+  #modal-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--amber);
+    color: #000;
+    border: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: not-allowed;
+    opacity: 0.35;
+    transition: opacity 0.25s, background 0.25s;
+  }
+
+  #modal-btn.active {
+    cursor: pointer;
+    opacity: 1;
+  }
+
+  #modal-btn.active:hover {
+    background: var(--amber-bright);
+  }
+
+  /* ── HEADER ─────────────────────────────────────────────── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 32px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .header-left .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 8px;
+  }
+
+  .header-left h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(24px, 3vw, 38px);
+    font-weight: 900;
+    color: var(--cream);
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+
+  .header-right {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: right;
+    line-height: 1.7;
+  }
+
+  .sup-badge {
+    display: inline-block;
+    background: rgba(201,123,42,0.15);
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 3px 10px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  /* ── TABS ────────────────────────────────────────────────── */
+  .tabs-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    padding: 0 48px;
+    gap: 0;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 16px 24px 14px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    margin-bottom: -1px;
+  }
+
+  .tab-btn:hover { color: var(--cream); }
+
+  .tab-btn.active {
+    color: var(--amber);
+    border-bottom-color: var(--amber);
+  }
+
+  /* ── MAIN ────────────────────────────────────────────────── */
+  main {
+    padding: 0 48px 60px;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── OG SHEET ─────────────────────────────────────────────── */
+  .section-header {
+    padding: 36px 0 20px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .section-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--cream);
+  }
+
+  .section-note {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--amber);
+  }
+
+  /* Intro blurb */
+  .intro-blurb {
+    max-width: 780px;
+    margin: 36px 0 40px;
+    padding: 32px 36px;
+    background: var(--surface);
+    border-left: 3px solid var(--amber);
+    border-top: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .intro-blurb .welcome {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--cream);
+    margin-bottom: 16px;
+    line-height: 1.3;
+  }
+
+  .intro-blurb p {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--cream-dim);
+    margin-bottom: 12px;
+  }
+
+  .intro-blurb p:last-child { margin-bottom: 0; }
+
+  .intro-blurb strong {
+    color: var(--cream);
+    font-weight: 500;
+  }
+
+  /* Nutrient breakdown table */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead {
+    background: var(--surface2);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  thead th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--amber);
+    text-align: left;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  tbody tr:nth-child(even) { background: var(--row-alt); }
+  tbody tr:hover { background: rgba(201,123,42,0.05); }
+
+  tbody td {
+    padding: 12px 18px;
+    vertical-align: top;
+    line-height: 1.55;
+  }
+
+  tbody td:first-child {
+    color: var(--cream);
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  tbody td:nth-child(2) {
+    color: var(--amber-bright);
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  tbody td:last-child {
+    color: var(--text-dim);
+    font-size: 12px;
+    max-width: 340px;
+  }
+
+  /* ── DEEP DIVE TABLE ─────────────────────────────────────── */
+  .category-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border: 1px solid;
+  }
+
+  .cat-fluids     { color: #4a9cc0; border-color: #2a5570; background: rgba(74,156,192,0.06); }
+  .cat-macro      { color: #c49e3a; border-color: #705820; background: rgba(196,158,58,0.06); }
+  .cat-vitamins   { color: #4a9060; border-color: #284e30; background: rgba(74,144,96,0.06); }
+  .cat-macro-min  { color: #9e6ac0; border-color: #503470; background: rgba(158,106,192,0.06); }
+  .cat-trace      { color: #c0704a; border-color: #703820; background: rgba(192,112,74,0.06); }
+  .cat-cond       { color: #c06a8a; border-color: #703048; background: rgba(192,106,138,0.06); }
+  .cat-animal     { color: #8ab040; border-color: #4a6020; background: rgba(138,176,64,0.06); }
+  .cat-phyto      { color: #70b090; border-color: #305040; background: rgba(112,176,144,0.06); }
+
+  .rdi-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--cream);
+    line-height: 1.55;
+  }
+
+  .rdi-no {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  .source-text {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .source-text em {
+    color: var(--amber-dim);
+    font-style: normal;
+  }
+
+  /* Search / filter */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 24px 0 16px;
+    flex-wrap: wrap;
+  }
+
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    max-width: 320px;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    color: var(--cream);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 10px 14px 10px 38px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-wrap input:focus { border-color: var(--amber-dim); }
+
+  .search-wrap::before {
+    content: '⌕';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    font-size: 16px;
+    pointer-events: none;
+  }
+
+  .filter-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    background: none;
+    border: 1px solid var(--border-light);
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .filter-btn:hover, .filter-btn.active {
+    border-color: var(--amber-dim);
+    color: var(--amber);
+    background: rgba(201,123,42,0.07);
+  }
+
+  .count-note {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  footer p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  footer a {
+    color: var(--amber-dim);
+    text-decoration: none;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    header, .tabs-bar, main, footer { padding-left: 20px; padding-right: 20px; }
+    #modal { padding: 28px 24px; }
+    .meal-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* Animate in */
+  .tab-panel.active table tbody tr {
+    animation: fadeRow 0.3s ease both;
+  }
+  @keyframes fadeRow {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── DISCLAIMER MODAL ─────────────────────────── -->
+<div id="modal-overlay">
+  <div id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-eyebrow">⚠ Important Notice — Please Read</div>
+    <h2 id="modal-title">This is Not Dietary or Medical Advice</h2>
+    <hr class="modal-rule">
+    <p>
+      The information presented on this page is provided <strong>for informational and reference purposes only</strong>. It does not constitute dietary advice, medical advice, clinical guidance, or any form of professional recommendation.
+    </p>
+    <p>
+      This content <strong>may contain errors, omissions, or outdated information</strong>. Nutritional data, Recommended Daily Intakes (RDIs), and food source information are drawn from general reference materials and may not reflect the most current scientific consensus.
+    </p>
+    <p>
+      <strong>Before making any changes to your diet</strong> — including adopting, modifying, or discontinuing any dietary pattern — you should consult a qualified and registered nutritionist, dietitian, or medical professional. Individual nutritional requirements vary significantly based on age, sex, health status, medication use, and other factors.
+    </p>
+    <p>
+      The author accepts <strong>no liability</strong> for decisions made in reliance on this content.
+    </p>
+
+    <div class="modal-checkbox-row">
+      <input type="checkbox" id="disclaimer-check">
+      <label for="disclaimer-check">
+        I have read and understood this disclaimer. I acknowledge this page is for informational purposes only and does not constitute professional dietary or medical advice.
+      </label>
+    </div>
+
+    <button id="modal-btn" disabled>Acknowledge &amp; Continue →</button>
+  </div>
+</div>
+
+<!-- ── HEADER ────────────────────────────────────── -->
+<header>
+  <div class="header-left">
+    <div class="eyebrow">Nutritional Reference</div>
+    <h1>Carnivore Diet<br>Coverage Map</h1>
+  </div>
+  <div class="header-right">
+    <span class="sup-badge">⚕ Supplement</span> Vit D · K · Magnesium Daily<br>
+    Personal reference document<br>
+    Not medical or dietary advice
+  </div>
+</header>
+
+<!-- ── TABS ──────────────────────────────────────── -->
+<div class="tabs-bar">
+  <button class="tab-btn active" data-tab="og">Overview</button>
+  <button class="tab-btn" data-tab="deep">Deep Dive — RDIs &amp; Sources</button>
+</div>
+
+<main>
+
+  <!-- ── TAB: OVERVIEW ────────────────────────────── -->
+  <div id="tab-og" class="tab-panel active">
+
+    <div class="intro-blurb">
+      <div class="welcome">Welcome</div>
+      <p>
+        This page exists as a personal reference — a working map of what a carnivore diet actually covers, and why I believe it covers it well. The premise is straightforward: with a varied selection of <strong>meats, eggs, dairy, and fish</strong>, the full spectrum of human nutritional requirements can be met — often exceeded — without relying on plant sources.
+      </p>
+      <p>
+        The table below charts each nutrient alongside notes on its role and relevance within a carnivore framework. Some entries include caveats worth understanding — such as reduced Vitamin C requirements in the absence of dietary glucose, or the nuanced case for organ meats as nature's multivitamin. These are not fringe ideas; they are grounded in biochemistry and increasingly supported by emerging research.
+      </p>
+      <p>
+        This is a living document. It reflects my current understanding and will be updated as my thinking evolves. For the full breakdown — including RDIs, quantities, and specific food sources — see the <strong>Deep Dive</strong> tab.
+      </p>
+    </div>
+
+    <div class="section-header">
+      <h2>Nutrient Coverage Overview</h2>
+      <span class="section-note">Achievable through varied meats, eggs, dairy &amp; fish</span>
+    </div>
+
+    <div class="table-wrap">
+      <table id="og-table">
+        <thead>
+          <tr>
+            <th>Nutrient</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TAB: DEEP DIVE ──────────────────────────── -->
+  <div id="tab-deep" class="tab-panel">
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <input type="text" id="deep-search" placeholder="Search nutrients…" autocomplete="off">
+      </div>
+      <div class="filter-btns" id="filter-btns"></div>
+      <span class="count-note" id="row-count"></span>
+    </div>
+
+    <div class="table-wrap">
+      <table id="deep-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Nutrient</th>
+            <th>RDI</th>
+            <th>Carnivore Source(s)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <p>Personal reference only — not dietary or medical advice</p>
+  <p>Errors may exist · Consult a registered dietitian</p>
+</footer>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────
+
+const mealPlan = [
+  { day: 'Sunday',    meals: ['x3 Eggs', 'Steak', 'Haggis', 'Broth'] },
+  { day: 'Monday',    meals: ['x3 Eggs', 'Steak', 'Oysters', 'Lamb'] },
+  { day: 'Tuesday',   meals: ['x3 Eggs', 'Roast', 'Haggis', 'Broth'] },
+  { day: 'Wednesday', meals: ['x3 Eggs', 'Steak', 'Salmon/Barra', 'Broth'] },
+  { day: 'Thursday',  meals: ['x3 Eggs', 'Steak', 'Haggis', 'Broth'] },
+  { day: 'Friday',    meals: ['x3 Eggs', 'Roast', 'Haggis', 'Broth'] },
+  { day: 'Saturday',  meals: ['x3 Eggs', 'Steak', 'Salmon/Barra', 'Beef Stew'] },
+];
+
+const ogNutrients = [
+  ['Protein & Amino Acids', 'Beef, Eggs, Dairy, Haggis', 'All essential amino acids'],
+  ['Vitamin A', 'Haggis / Liver', 'Vision, immune system, skin health\nLimit intake to avoid Vitamin A toxicity'],
+  ['Vitamin B1 (Thiamine)', 'Beef, Eggs', 'Energy metabolism, nervous system health'],
+  ['Vitamin B2 (Riboflavin)', 'Eggs, Dairy, Haggis', 'Energy production, antioxidant'],
+  ['Vitamin B3 (Niacin)', 'Beef, Eggs, Haggis', 'NAD/NADP production'],
+  ['Vitamin B5 (Pantothenic Acid)', 'Eggs, Meat', 'Coenzyme A synthesis'],
+  ['Vitamin B6', 'Beef, Haggis, Eggs', 'Neurotransmitter synthesis'],
+  ['Vitamin B7 (Biotin)', 'Eggs, Haggis', 'Fat & carb metabolism'],
+  ['Vitamin B9 (Folate)', 'Haggis / Liver', 'DNA synthesis, red blood cell formation'],
+  ['Vitamin B12', 'Beef, Liver, Shellfish', 'Red blood cell formation, nervous system'],
+  ['Vitamin C', 'Haggis (lung/heart), Kidney, Barramundi', 'Antioxidant, Collagen Production\n(Reduced requirement due to low/no glucose diet, more on GLUT transporters)'],
+  ['Vitamin D', 'Eggs, Barramundi, Supplement', 'Bone Health, Immune System, mood\n(Supplemented due to sedentary, indoor lifestyle)'],
+  ['Vitamin E', 'Eggs, Barramundi, Organ fat', 'Antioxidant, cell membrane health'],
+  ['Vitamin K2', 'Eggs, Dairy, Organ fat', 'Bone & cardiovascular health'],
+  ['Calcium', 'Dairy, Bone broth', 'Bone health, muscle contraction'],
+  ['Iron (heme)', 'Beef, Haggis, Shellfish', 'Oxygen transport'],
+  ['Zinc', 'Beef, Oysters', 'Immunity, enzyme & cellular metabolism'],
+  ['Copper', 'Liver/Haggis, Shellfish', 'Enzyme cofactor'],
+  ['Magnesium', 'Shellfish, Bone broth + 300mg supplement', 'Enzyme cofactor, muscle/nerve health'],
+  ['Manganese', 'Oysters, Mussels', 'Enzyme cofactor'],
+  ['Selenium', 'Eggs, Beef, Kidney, Fish, Shellfish', 'Antioxidant, enzyme cofactor'],
+  ['Iodine', 'Barramundi, Shellfish', 'Thyroid hormone production'],
+  ['Choline', 'Eggs, Liver, Fish', 'Cell membrane & neurotransmitter health'],
+  ['CoQ10', 'Heart, Liver, Haggis, Barramundi', 'Mitochondrial energy, antioxidant'],
+  ['Taurine', 'Heart, Seafood, Eggs', 'Cardiovascular & eye health'],
+  ['Glycine', 'Bone broth, Connective tissue, Marrow', 'Collagen synthesis, detox, sleep'],
+];
+
+const deepDive = [
+  ['Fluids', 'Water', 'RDI: 2L+', 'Water'],
+  ['Phytonutrients', 'Flavonoids', 'No RDI', 'Tea'],
+  ['Phytonutrients', 'Polyphenols', 'No RDI', 'Tea'],
+  ['Phytonutrients', 'Carotenoids', 'No RDI', 'Blueberries'],
+  ['Macronutrients', 'Protein', 'RDI: ~0.8 g/kg body weight, ~50–70 g/day\n*Inclusive of Cysteine, Glycine & Proline', 'All meats (beef, lamb, pork, poultry, fish, shellfish), eggs, dairy.\nExample: 100 g beef = ~26 g protein.'],
+  ['Macronutrients', 'Fat', 'No RDI\n*Essential fatty acids Omega 3 & 6 required', 'Fatty fish (salmon, sardines, mackerel), egg yolks, animal fats.\nExample: 100 g salmon = ~13 g fat including essential fatty acids.'],
+  ['Macronutrients', 'Carbohydrates', 'No RDI\n*No essential requirement', 'Trace in shellfish and organ meats.'],
+  ['Vitamins', 'Vitamin A', 'RDI: 700–900 µg RAE\n*Micrograms of Retinol Activity Equivalents', 'Liver (100 g beef liver = >9000 µg), egg yolks, fish roe, dairy fat.'],
+  ['Vitamins', 'Vitamin D3', 'RDI: 250 µg (10,000 IU)', 'Fatty fish (100 g salmon = ~400–600 IU), cod liver oil, egg yolks.'],
+  ['Vitamins', 'Vitamin E', 'RDI: 15 mg', 'Egg yolk (~1 mg/100 g), fatty fish, butter (small amounts).'],
+  ['Vitamins', 'Vitamin K1', 'RDI: 90–120 µg', 'Blueberries, Prunes\nExample: 400 g blueberries = ~80 µg of K1'],
+  ['Vitamins', 'Vitamin K2', 'RDI: 20–50 µg', 'Liver, egg yolks, hard cheeses, grass-fed butter.'],
+  ['Vitamins', 'Vitamin C', 'RDI: 75–90 mg', 'Raw liver (~25–30 mg/100 g), kidney, spleen, adrenal glands, oysters, fish roe.'],
+  ['Vitamins', 'Vitamin B1 (Thiamin)', 'RDI: 1.1–1.2 mg', 'Pork (100 g = 0.8 mg), liver, heart, eggs, fish.'],
+  ['Vitamins', 'Vitamin B2 (Riboflavin)', 'RDI: 1.1–1.3 mg', 'Liver (100 g beef liver = 3 mg), kidney, dairy, eggs, fish.'],
+  ['Vitamins', 'Vitamin B3 (Niacin)', 'RDI: 14–16 mg', 'Poultry, beef, fish (100 g chicken breast = 10 mg).'],
+  ['Vitamins', 'Vitamin B5 (Pantothenic Acid)', 'RDI: 5 mg', 'Liver (100 g beef liver = 6–7 mg), egg yolk, dairy, fish.'],
+  ['Vitamins', 'Vitamin B6', 'RDI: 1.3–1.7 mg', 'Poultry, fish (100 g salmon = 0.9 mg), pork, liver.'],
+  ['Vitamins', 'Vitamin B7 (Biotin)', 'RDI: 30 µg', 'Liver (100 g = 30–100 µg), egg yolk, salmon, dairy.'],
+  ['Vitamins', 'Vitamin B9 (Folate)', 'RDI: 400 µg', 'Liver (100 g beef = 200–250 µg), egg yolk, goat cheese.'],
+  ['Vitamins', 'Vitamin B12', 'RDI: 2.4 µg\n*Inclusive of essential trace mineral Cobalt', 'Liver (100 g beef = ~70 µg), clams (~100 µg/100 g), mussels, crab, oysters, beef, fish, eggs, dairy.'],
+  ['Macrominerals', 'Calcium', 'RDI: 1000 mg', 'Dairy (milk 1 cup = ~300 mg), small fish with bones, bone broth.'],
+  ['Macrominerals', 'Chloride', 'RDI: 2300 mg', 'Seafood, animal blood/meat (mainly from salt content).'],
+  ['Macrominerals', 'Magnesium', 'RDI: 310–420 mg', 'Fish (100 g salmon = ~30 mg), shellfish, organ meats.'],
+  ['Macrominerals', 'Phosphorus', 'RDI: 700 mg', 'All meats (100 g beef = ~200 mg), fish, dairy, eggs.'],
+  ['Macrominerals', 'Potassium', 'RDI: 2600–3400 mg', 'Beef (100 g = ~300 mg), fish, dairy, eggs.'],
+  ['Macrominerals', 'Sodium', 'RDI: 2300 mg', 'Seafood, salted meats, natural content of meats.'],
+  ['Macrominerals', 'Sulfur', 'No RDI\n*Essential amino acids, methionine & cysteine required', 'Eggs, meat, fish, organ meats.'],
+  ['Trace Minerals', 'Chromium', 'RDI: 25–35 µg', 'Beef, liver, eggs, oysters, mussels.'],
+  ['Trace Minerals', 'Copper', 'RDI: 900 µg', 'Liver (100 g beef = ~12 mg), oysters, shellfish, kidneys.'],
+  ['Trace Minerals', 'Fluoride', 'RDI: 3–4 mg', 'Marine fish, shellfish (bones).\nWater (👎 not that it should be there)'],
+  ['Trace Minerals', 'Iodine', 'RDI: 150 µg', 'Fish (100 g cod = ~100 µg), shellfish, cod liver oil, dairy, eggs.'],
+  ['Trace Minerals', 'Iron', 'RDI: 8–18 mg', 'Red meat (100 g beef = ~2.5 mg), liver (100 g = 6–9 mg), clams (100 g = 28 mg).'],
+  ['Trace Minerals', 'Manganese', 'RDI: 1.8–2.3 mg', 'Shellfish (mussels, clams, oysters).'],
+  ['Trace Minerals', 'Molybdenum', 'RDI: 45 µg', 'Liver, kidney, dairy.'],
+  ['Trace Minerals', 'Selenium', 'RDI: 55 µg', 'Seafood (100 g tuna = 90 µg), kidney, liver, egg yolks.'],
+  ['Trace Minerals', 'Zinc', 'RDI: 8–11 mg', 'Oysters (100 g = ~60 mg), beef (100 g = 5 mg), lamb, liver, poultry, eggs.'],
+  ['Conditionally Essential', 'Choline', 'RDI: 425–550 mg', '4 egg yolks (~500 mg), 100 g beef liver (~350 mg), 200 g beef (~150 mg), 250 g fish (~200 mg).'],
+  ['Conditionally Essential', 'Carnitine', 'No RDI\n*20–50 mg common intake', 'Red meat (100 g beef = 50–150 mg), lamb, dairy.'],
+  ['Conditionally Essential', 'Taurine', 'No RDI\n*~500 mg common intake', 'Shellfish (100 g scallops = ~800 mg), dark poultry, heart, fish.'],
+  ['Conditionally Essential', 'Inositol', 'No RDI', 'Liver, kidney, brain, eggs, dairy.'],
+  ['Conditionally Essential', 'Alpha-lipoic acid', 'No RDI', 'Red meat, heart, kidney, liver.'],
+  ['Conditionally Essential', 'Coenzyme Q10', 'No RDI', 'Heart, liver, kidney, beef, pork, oily fish.'],
+  ['Conditionally Essential', 'Glutathione', 'No RDI\n*Endogenous', 'Fresh meat, liver, kidney.'],
+  ['Conditionally Essential', 'Creatine', 'No RDI\n*~1–3 mg beneficial intake', 'Red meat (100 g beef = ~0.5 g), pork, poultry, fish.'],
+  ['Conditionally Essential', 'Lipoic acid', 'No RDI', 'Organ meats (kidney, heart, liver).'],
+  ['Animal Phytoequivalents', 'Carotenoid derivatives (Retinol)', 'No RDI', 'Liver, egg yolks, fish roe.'],
+  ['Animal Phytoequivalents', 'CLA (Conjugated Linoleic Acid)', 'No RDI', 'Beef, lamb, dairy fat (grass-fed).'],
+  ['Animal Phytoequivalents', 'Squalene', 'No RDI', 'Shark liver oil, fish oils.'],
+  ['Animal Phytoequivalents', 'Organosulfur compounds (Taurine, Glutathione, Cysteine)', 'No RDI', 'Eggs, shellfish, organ meats.'],
+];
+
+// Category → CSS class
+const catClass = {
+  'Fluids':                 'cat-fluids',
+  'Phytonutrients':         'cat-phyto',
+  'Macronutrients':         'cat-macro',
+  'Vitamins':               'cat-vitamins',
+  'Macrominerals':          'cat-macro-min',
+  'Trace Minerals':         'cat-trace',
+  'Conditionally Essential':'cat-cond',
+  'Animal Phytoequivalents':'cat-animal',
+};
+
+// ── RENDER OG TABLE ─────────────────────────────────────────────────────────
+function renderOgTable() {
+  const tbody = document.querySelector('#og-table tbody');
+  ogNutrients.forEach(([nutrient, , notes]) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${nutrient}</td>
+      <td>${notes.replace(/\n/g, '<br>')}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── RENDER DEEP DIVE TABLE ──────────────────────────────────────────────────
+function renderDeepTable(rows) {
+  const tbody = document.querySelector('#deep-table tbody');
+  tbody.innerHTML = '';
+  rows.forEach(([cat, nutrient, rdi, sources]) => {
+    const cls = catClass[cat] || '';
+    const isNoRDI = rdi.startsWith('No RDI');
+    const rdiHtml = isNoRDI
+      ? `<span class="rdi-no">${rdi.replace(/\n/g, '<br>')}</span>`
+      : `<span class="rdi-value">${rdi.replace(/\n/g, '<br>')}</span>`;
+
+    const tr = document.createElement('tr');
+    tr.dataset.cat = cat;
+    tr.dataset.text = (cat + nutrient + rdi + sources).toLowerCase();
+    tr.innerHTML = `
+      <td><span class="category-tag ${cls}">${cat}</span></td>
+      <td style="color:var(--cream);font-weight:400;">${nutrient}</td>
+      <td>${rdiHtml}</td>
+      <td class="source-text">${sources.replace(/\n/g, '<br>')}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('row-count').textContent = rows.length + ' nutrients';
+}
+
+// ── FILTER / SEARCH ─────────────────────────────────────────────────────────
+let activeFilter = 'All';
+let searchQuery = '';
+
+function applyFilters() {
+  const categories = [...new Set(deepDive.map(r => r[0]))];
+  let filtered = deepDive;
+  if (activeFilter !== 'All') filtered = filtered.filter(r => r[0] === activeFilter);
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(r => r.join(' ').toLowerCase().includes(q));
+  }
+  renderDeepTable(filtered);
+}
+
+function buildFilterBtns() {
+  const container = document.getElementById('filter-btns');
+  const cats = ['All', ...new Set(deepDive.map(r => r[0]))];
+  cats.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === 'All' ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => {
+      activeFilter = cat;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyFilters();
+    });
+    container.appendChild(btn);
+  });
+}
+
+// ── TABS ────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── MODAL ────────────────────────────────────────────────────────────────────
+const checkbox = document.getElementById('disclaimer-check');
+const btn = document.getElementById('modal-btn');
+const overlay = document.getElementById('modal-overlay');
+
+checkbox.addEventListener('change', () => {
+  btn.disabled = !checkbox.checked;
+  btn.classList.toggle('active', checkbox.checked);
+});
+
+btn.addEventListener('click', () => {
+  if (!checkbox.checked) return;
+  overlay.style.opacity = '0';
+  overlay.style.transition = 'opacity 0.4s ease';
+  setTimeout(() => overlay.remove(), 400);
+});
+
+// ── SEARCH ───────────────────────────────────────────────────────────────────
+document.getElementById('deep-search').addEventListener('input', e => {
+  searchQuery = e.target.value.trim();
+  applyFilters();
+});
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+renderOgTable();
+buildFilterBtns();
+renderDeepTable(deepDive);
+</script>
+</body>
+</html>
