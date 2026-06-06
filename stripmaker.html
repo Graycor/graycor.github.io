@@ -1,0 +1,4640 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>STRIPMAKER · Sequence Strip Builder · v0.6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Funnel+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* =========================================================================
+   STRIPMAKER · v0.5
+   Single-file web app for building Australia Post sequence strips.
+   ========================================================================= */
+
+:root {
+  --bg:           #0b0b0c;
+  --surface:      #141416;
+  --surface-2:    #1b1b1f;
+  --surface-3:    #232328;
+  --surface-4:    #2c2c32;
+  --border:       #2a2a30;
+  --border-strong:#3a3a42;
+  --text:         #ececec;
+  --text-muted:   #9396a0;
+  --text-dim:     #5a5a64;
+  --accent:       #e5302b;
+  --accent-soft:  rgba(229,48,43,0.14);
+  --accent-strong:#ff423c;
+  --good:         #4ade80;
+  --warn:         #f59e0b;
+  --danger:       #ef4444;
+
+  --paper:        #f3eee0;
+  --paper-text:   #1d1a14;
+  --paper-line:   #b8ad94;
+  --paper-shadow: 0 1px 0 rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.06);
+
+  --ff-sans: 'Funnel Sans', system-ui, -apple-system, sans-serif;
+  --ff-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --notch-w: 32px;
+  --strip-h: 78px;
+  --strip-num-h: 36px;
+  --strip-unit-h: 18px;
+  --strip-label-h: 24px;
+
+  --radius: 6px;
+  --radius-sm: 4px;
+  --shadow: 0 4px 18px rgba(0,0,0,0.35);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  font-family: var(--ff-sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* -------------------------------------------------------------------------
+   TOPBAR
+   ------------------------------------------------------------------------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 18px;
+  gap: 22px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--ff-mono);
+  user-select: none;
+}
+.brand-mark {
+  font-size: 16px;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+}
+.brand-name {
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-size: 13px;
+}
+.brand-version {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.topnav {
+  display: flex;
+  gap: 2px;
+  margin-left: 12px;
+}
+.topnav button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: background 0.12s, color 0.12s;
+}
+.topnav button:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+.topnav button.active {
+  color: var(--text);
+  background: var(--surface-3);
+}
+
+.topactions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.12s, border-color 0.12s;
+}
+.tbtn:hover {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+}
+.tbtn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.tbtn.primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+.tbtn.danger {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--danger);
+}
+.tbtn.danger:hover {
+  background: rgba(239,68,68,0.1);
+  border-color: var(--danger);
+}
+.tbtn.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+}
+.tbtn.ghost:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+.tbtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* -------------------------------------------------------------------------
+   PAGE LAYOUT
+   ------------------------------------------------------------------------- */
+.page {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 24px 18px 64px;
+}
+
+.page-header {
+  margin-bottom: 18px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.page-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.page-subtitle {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 2px 0 0;
+  font-family: var(--ff-mono);
+}
+
+.section-eyebrow {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+
+/* -------------------------------------------------------------------------
+   BROWSE VIEW
+   ------------------------------------------------------------------------- */
+.browse-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+.browse-toolbar .spacer { flex: 1; }
+
+.browse-empty {
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: 56px 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.browse-empty h2 {
+  color: var(--text);
+  font-size: 18px;
+  margin: 0 0 6px;
+}
+.browse-empty p { margin: 0 0 18px; }
+
+.wcc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.wcc-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.wcc-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+.wcc-code {
+  font-family: var(--ff-mono);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+.wcc-label {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.wcc-head .actions { margin-left: auto; display: flex; gap: 6px; }
+
+.round-list {
+  display: flex;
+  flex-direction: column;
+}
+.round-block {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.round-block:last-child { border-bottom: 0; }
+.round-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.round-num {
+  font-family: var(--ff-mono);
+  background: var(--surface-3);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.round-label { color: var(--text-muted); font-size: 13px; }
+.round-head .actions { margin-left: auto; display: flex; gap: 4px; }
+
+.sides-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+}
+
+.side-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.side-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.side-letter {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-family: var(--ff-mono);
+  font-weight: 700;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+.side-label {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--ff-mono);
+}
+.side-head .actions { margin-left: auto; display: flex; gap: 4px; }
+
+.subside-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.subside-pill-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.sub-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-dim);
+  border: 1px solid var(--border-strong);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  z-index: 2;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.subside-pill-wrap:hover .sub-remove { display: inline-flex; }
+.sub-remove:hover {
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
+}
+.subside-add {
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.subside-add:hover {
+  background: var(--surface-3);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.subside-pill {
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 9px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text);
+  transition: background 0.12s, border-color 0.12s;
+}
+.subside-pill:hover {
+  background: var(--surface-4);
+  border-color: var(--border-strong);
+}
+.subside-pill .sub-id {
+  font-weight: 600;
+  color: var(--text);
+}
+.subside-pill.empty {
+  color: var(--text-dim);
+  border-style: dashed;
+}
+.subside-pill .sub-empty {
+  color: var(--text-dim);
+  font-style: italic;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.sub-dots {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+.sub-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  border: 0.5px solid rgba(0,0,0,0.25);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+}
+.sub-dot-more {
+  font-size: 9px;
+  color: var(--text-dim);
+  margin-left: 2px;
+}
+
+.wcc-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--ff-mono);
+  background: var(--surface-3);
+  padding: 2px 8px;
+  border-radius: 11px;
+  margin-left: 6px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+a.wcc-contact:hover {
+  background: var(--surface-4);
+  color: var(--text);
+  border-color: var(--border);
+}
+.wcc-contact .mail-icon { color: var(--accent); font-size: 11px; }
+
+.round-pdo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: var(--ff-mono);
+  letter-spacing: 0.02em;
+  background: var(--surface-3);
+  padding: 2px 8px;
+  border-radius: 11px;
+  margin-left: 4px;
+}
+.round-pdo .pdo-icon { color: var(--accent); font-size: 9px; }
+
+/* -------------------------------------------------------------------------
+   EDITOR VIEW
+   ------------------------------------------------------------------------- */
+.editor-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.crumbs .sep { color: var(--text-dim); }
+.sub-nav { display: inline-flex; gap: 4px; }
+.crumbs .current { color: var(--text); font-weight: 600; }
+.editor-header .actions { margin-left: auto; display: flex; gap: 6px; }
+
+.zoom-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+.zoom-control button {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  width: 24px; height: 24px;
+  border-radius: 3px;
+  font-size: 14px;
+}
+.zoom-control button:hover { background: var(--surface-3); color: var(--text); }
+.zoom-control .level {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 0 6px;
+  min-width: 42px;
+  text-align: center;
+}
+
+/* -------------------------------------------------------------------------
+   STRIP PREVIEW
+   ------------------------------------------------------------------------- */
+.preview-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 22px;
+  overflow: hidden;
+}
+.preview-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.preview-bar .stats { display: flex; gap: 16px; }
+.preview-bar .stat strong { color: var(--text); font-weight: 600; }
+.preview-bar .stat.overflow strong { color: var(--danger); }
+.preview-bar .stat.near strong { color: var(--warn); }
+.preview-bar .over-badge {
+  color: var(--danger);
+  font-weight: 700;
+  margin-left: 2px;
+}
+.preview-bar .near-badge {
+  color: var(--warn);
+  font-weight: 600;
+  margin-left: 2px;
+}
+.preview-bar .right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+
+.preview-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 22px 18px;
+  background:
+    radial-gradient(ellipse at top, rgba(255,255,255,0.018), transparent 60%),
+    var(--surface);
+}
+
+.strip {
+  display: inline-flex;
+  align-items: stretch;
+  min-height: var(--strip-h);
+  background: var(--paper);
+  border-radius: 2px;
+  box-shadow: var(--paper-shadow);
+  color: var(--paper-text);
+  position: relative;
+  overflow: hidden;
+}
+.strip.is-empty {
+  min-width: 600px;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--paper) 0,
+    var(--paper) 12px,
+    rgba(0,0,0,0.04) 12px,
+    rgba(0,0,0,0.04) 24px
+  );
+}
+
+.strip-section {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  cursor: pointer;
+  position: relative;
+  transition: outline-color 0.12s;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+}
+.strip-section:hover { outline-color: rgba(0,0,0,0.18); }
+.strip-section.selected {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  z-index: 2;
+}
+
+.strip-section .num-row {
+  display: flex;
+  flex: 1;
+  min-height: var(--strip-num-h);
+  align-items: stretch;
+}
+
+.notch {
+  width: var(--notch-w);
+  border-right: 1px solid var(--paper-line);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  position: relative;
+  font-family: var(--ff-mono);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.notch:last-child { border-right: 0; }
+.notch-numbers {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 2px 0;
+  letter-spacing: -0.01em;
+  /* Anchor numbers near the TOP so non-unit notches align with unit-bearing notches' parent number */
+  height: 22px;
+  flex-shrink: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.notch-numbers .num {
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Single-address notch: font scales with digit count.
+   1-digit "8" is large; 4-digit "1234" still legible. */
+.notch-numbers.single.tier-s  { font-size: 16px; }
+.notch-numbers.single.tier-m  { font-size: 14px; }
+.notch-numbers.single.tier-l  { font-size: 11px; }
+.notch-numbers.single.tier-xl { font-size: 9px;  }
+
+/* Pair notch: two numbers side-by-side with a faint divider.
+   Smaller font than singles since two numbers must fit. */
+.notch-numbers.pair {
+  justify-content: space-around;
+  padding: 4px 2px 0;
+  gap: 4px;
+}
+.notch-numbers.pair .num {
+  position: relative;
+}
+/* faint vertical separator between paired numbers */
+.notch-numbers.pair .num + .num::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 5%;
+  height: 90%;
+  width: 1px;
+  background: currentColor;
+  opacity: 0.22;
+}
+.notch-numbers.pair.tier-s  .num { font-size: 13px; }
+.notch-numbers.pair.tier-m  .num { font-size: 11px; }
+
+/* v0.6: paired numbers ALWAYS stay on one line (never stacked/layered).
+   These tiers are conservative starting sizes; fitNotchNumbers() then shrinks
+   the font further at runtime if a notch is still too narrow, guaranteeing
+   both numbers fit side-by-side without overlap. Digits must never clip. */
+.notch-numbers.pair {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.notch-numbers.pair.tier-l  .num { font-size: 9px; letter-spacing: -0.02em; }
+.notch-numbers.pair.tier-xl .num { font-size: 7px; letter-spacing: -0.04em; }
+
+/* Apartment parent number: matches pair-tier sizes so it visually harmonises
+   with nearby paired numbers on the strip rather than appearing oversized. */
+.notch-numbers.apt {
+  font-weight: 700;
+}
+.notch-numbers.apt.tier-s  { font-size: 13px; }
+.notch-numbers.apt.tier-m  { font-size: 11px; }
+.notch-numbers.apt.tier-l  { font-size: 9px;  }
+.notch-numbers.apt.tier-xl { font-size: 8px;  }
+
+.notch-units {
+  display: flex;
+  align-items: center;
+  height: var(--strip-unit-h);
+  border-top: 1px solid rgba(0,0,0,0.18);
+  /* No row-level fill: each real unit paints its own light cell, so a blank
+     "house number" cell shows the section colour through (matching the strip). */
+  background: transparent;
+  color: #000;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  margin-top: auto;
+}
+.notch-units .unit {
+  flex: 1;
+  text-align: center;
+  border-right: 1px solid rgba(0,0,0,0.18);
+  padding: 1px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  position: relative;
+  background: rgba(255,255,255,0.42);
+}
+.notch-units .unit:last-child { border-right: 0; }
+/* Blank "house number" cell — plain, shows the section colour, no fill/hatch. */
+.notch-units .unit.empty { background: transparent; }
+/* per-unit flag indicators: thin top stripe on the unit cell */
+.notch-units .unit.com { box-shadow: inset 0 2px 0 #1e88e5; }
+.notch-units .unit.njm { box-shadow: inset 0 2px 0 #424242; }
+.notch-units .unit.com.njm {
+  box-shadow: inset 2px 2px 0 0 #1e88e5, inset -2px 2px 0 0 #424242;
+}
+
+/* Wide notch for an apartment block segment */
+.notch-apt {
+  /* width set inline */
+  border-right: 1px solid var(--paper-line);
+}
+
+/* tiny corner flags on a notch (address-level summary) */
+.notch-flags {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: flex;
+  gap: 2px;
+  z-index: 1;
+}
+.notch-flag {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(0,0,0,0.35);
+}
+.notch-flag.com { background: #1e88e5; }
+.notch-flag.njm { background: #424242; }
+
+.strip-section .label-row {
+  height: var(--strip-label-h);
+  border-top: 1px solid rgba(0,0,0,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0 6px;
+  overflow: hidden;
+  /* min-width:0 lets flex children shrink so the section stays at its natural notch-count width */
+  min-width: 0;
+}
+.strip-section .label-row .label-text {
+  /* Centers when it fits; clamps to 100% and shows left side first when overflowing. */
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-align: left;
+}
+
+.strip-end {
+  width: 70px;
+  background: var(--paper);
+  border-left: 2px solid var(--paper-line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--paper-text);
+  padding: 4px;
+  flex-shrink: 0;
+}
+.strip-end .rnd { font-weight: 600; letter-spacing: 0.04em; }
+.strip-end .id  { font-size: 12px; font-weight: 700; margin-top: 2px; color: var(--accent); }
+
+/* -------------------------------------------------------------------------
+   INSPECTOR (section editor + addresses)
+   ------------------------------------------------------------------------- */
+.inspector {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+.inspector h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.inspector .subtitle {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-bottom: 16px;
+  font-family: var(--ff-mono);
+  letter-spacing: 0.02em;
+}
+
+.inspector-empty {
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: 32px 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.inspector-empty p { margin: 0 0 14px; }
+
+.form-row {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.field.grow { flex: 1; min-width: 200px; }
+.field label {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.input, .select, .textarea {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 14px;
+  transition: border-color 0.12s, background 0.12s;
+}
+.input:focus, .select:focus, .textarea:focus {
+  outline: 0;
+  border-color: var(--accent);
+  background: var(--surface-3);
+}
+.input.mono { font-family: var(--ff-mono); letter-spacing: 0.02em; }
+.input.small { padding: 4px 8px; font-size: 13px; }
+
+.toggle-group {
+  display: inline-flex;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+.toggle-group button {
+  background: transparent;
+  border: 0;
+  padding: 5px 12px;
+  border-radius: 3px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.toggle-group button.active {
+  background: var(--surface-4);
+  color: var(--text);
+}
+.toggle-group button:hover:not(.active) {
+  color: var(--text);
+}
+
+/* Color palette */
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.1s, border-color 0.12s;
+  position: relative;
+}
+.swatch:hover { transform: scale(1.08); }
+.swatch.selected {
+  border-color: var(--text);
+  box-shadow: 0 0 0 1px var(--bg);
+}
+.swatch .check {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.hex-input {
+  width: 88px;
+  font-family: var(--ff-mono);
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+/* Address list */
+.addr-table-wrap {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.addr-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.addr-table th {
+  background: var(--surface-2);
+  text-align: left;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.addr-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.addr-table tr:last-child td { border-bottom: 0; }
+.addr-table tr:hover td { background: rgba(255,255,255,0.015); }
+.addr-table .col-drag { width: 28px; text-align: center; }
+.addr-table .col-num { width: 110px; }
+.addr-table .col-units { }
+.addr-table .col-flags { width: 270px; }
+.addr-table .col-actions { width: 96px; text-align: right; white-space: nowrap; }
+
+.drag-handle {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  cursor: grab;
+  font-size: 14px;
+  letter-spacing: -2px;
+  user-select: none;
+  border-radius: 4px;
+}
+.drag-handle:hover { color: var(--text); background: var(--surface-3); }
+.drag-handle:active { cursor: grabbing; }
+.addr-row.dragging { opacity: 0.4; }
+.addr-row.drag-over-above { box-shadow: inset 0 2px 0 var(--accent); }
+.addr-row.drag-over-below { box-shadow: inset 0 -2px 0 var(--accent); }
+
+.flag-toggle-row {
+  display: inline-flex;
+  gap: 4px;
+}
+.flag-toggle {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 4px 9px;
+  border-radius: 11px;
+  transition: background 0.12s, color 0.12s, border-color 0.12s, box-shadow 0.12s;
+}
+.flag-toggle:hover { color: var(--text); border-color: var(--border-strong); }
+.flag-toggle.active {
+  background: #424242;
+  border-color: #5a5a5a;
+  color: #f8f8f8;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 0 12px rgba(150,150,150,0.18);
+}
+.flag-toggle.com.active {
+  background: #1e88e5;
+  border-color: #1976d2;
+  color: white;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.12), 0 0 14px rgba(30,136,229,0.45);
+}
+/* partial = some units have the flag, others don't */
+.flag-toggle.partial {
+  background: linear-gradient(135deg, var(--surface-2) 50%, #424242 50%);
+  border-color: #5a5a5a;
+  color: #e0e0e0;
+}
+.flag-toggle.com.partial {
+  background: linear-gradient(135deg, var(--surface-2) 50%, #1e88e5 50%);
+  border-color: #1976d2;
+  color: white;
+}
+
+/* unit chips redesigned to hold per-unit flag toggles */
+.unit-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.unit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2px 4px 2px 9px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.unit-chip.njm { border-color: #5a5a5a; box-shadow: inset 0 0 0 1px #424242; }
+.unit-chip.com { border-color: #1976d2; box-shadow: inset 0 0 0 1px #1e88e5; }
+.unit-chip.com.njm { box-shadow: inset 0 0 0 1px #1e88e5, inset 0 0 0 2px rgba(66,66,66,0.4); }
+.unit-chip .unit-label {
+  font-weight: 600;
+  color: var(--text);
+}
+.unit-flag-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 1px 4px;
+  border-radius: 8px;
+  height: 18px;
+  line-height: 1;
+}
+.unit-flag-btn:hover { color: var(--text); background: var(--surface-4); }
+.unit-flag-btn.njm-btn.active {
+  background: #424242;
+  border-color: #5a5a5a;
+  color: white;
+}
+.unit-flag-btn.com-btn.active {
+  background: #1e88e5;
+  border-color: #1976d2;
+  color: white;
+}
+.unit-remove {
+  background: transparent;
+  border: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+.unit-remove:hover { color: var(--danger); background: var(--surface-4); }
+
+.addr-table input.input { background: var(--bg); }
+.addr-table input.input:focus { background: var(--surface-2); }
+
+.unit-add {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+.unit-add .input { width: 50px; font-size: 11px; padding: 3px 6px; }
+
+.icon-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.icon-btn:hover { background: var(--surface-3); color: var(--text); border-color: var(--border); }
+.icon-btn.danger:hover { color: var(--danger); border-color: rgba(239,68,68,0.4); }
+
+.addr-add-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+}
+.addr-add-row .input { background: var(--bg); }
+
+.section-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.section-tab {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.section-tab .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+.section-tab:hover { background: var(--surface-3); color: var(--text); border-color: var(--border-strong); }
+.section-tab.active {
+  background: var(--surface-4);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+/* -------------------------------------------------------------------------
+   MODAL
+   ------------------------------------------------------------------------- */
+.modal-back {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.14s ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  max-width: 480px;
+  width: 100%;
+  padding: 22px;
+  animation: pop 0.16s ease-out;
+}
+.modal.wide { max-width: 720px; }
+@keyframes pop { from { transform: scale(0.97); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.modal .subtle {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 0 0 18px;
+}
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* -------------------------------------------------------------------------
+   TOAST
+   ------------------------------------------------------------------------- */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  box-shadow: var(--shadow);
+  z-index: 300;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s, transform 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.toast.good { border-color: var(--good); }
+.toast.warn { border-color: var(--warn); }
+.toast.danger { border-color: var(--danger); }
+.toast::before {
+  content: '';
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+  opacity: 0.6;
+}
+.toast.good::before { background: var(--good); opacity: 1; }
+.toast.warn::before { background: var(--warn); opacity: 1; }
+.toast.danger::before { background: var(--danger); opacity: 1; }
+
+/* -------------------------------------------------------------------------
+   PRINT
+   ------------------------------------------------------------------------- */
+
+/* Default @page; overridden dynamically at print time via injected style tag. */
+@page {
+  size: A4 portrait;
+  margin: 15mm;
+}
+
+@media print {
+  html, body { background: white; }
+  /* Default: hide both print roots */
+  body > *:not(.print-root):not(.report-root) { display: none !important; }
+  .print-root, .report-root { display: none !important; }
+
+  /* When printing a strip */
+  body[data-printing="strip"] .print-root { display: block !important; }
+  body[data-printing="strip"] .print-root .strip {
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  /* When printing a report */
+  body[data-printing="report"] .report-root { display: block !important; }
+}
+
+.print-root, .report-root {
+  display: none;
+}
+
+/* Print-only sizing (confirmed against physical strip 2026-05-28):
+     each notch 14.5mm wide, strip 21mm tall, full strip holder 920mm wide,
+     2-notch (29mm) round-end marker (may overhang the holder),
+     MAX_NOTCHES = 60 sequence cells (user-imposed cap). */
+.print-root .strip {
+  --notch-w: 14.5mm;
+  --strip-h: 21mm;
+  --strip-num-h: 13.5mm;
+  --strip-unit-h: 4.5mm;
+  --strip-label-h: 7.5mm;
+}
+.print-root .strip .notch-numbers { height: 9mm; padding: 1mm 0.5mm 0; }
+.print-root .strip .notch-numbers.single.tier-s  { font-size: 7mm;   }
+.print-root .strip .notch-numbers.single.tier-m  { font-size: 6mm;   }
+.print-root .strip .notch-numbers.single.tier-l  { font-size: 4.8mm; }
+.print-root .strip .notch-numbers.single.tier-xl { font-size: 4mm;   }
+.print-root .strip .notch-numbers.pair.tier-s  .num { font-size: 5.6mm; }
+.print-root .strip .notch-numbers.pair.tier-m  .num { font-size: 4.8mm; }
+/* v0.6: one-line pairs — sized so two numbers + separator fit inside 14.5mm. */
+.print-root .strip .notch-numbers.pair.tier-l  .num { font-size: 3.2mm; letter-spacing: -0.05mm; }
+.print-root .strip .notch-numbers.pair.tier-xl .num { font-size: 2.5mm; letter-spacing: -0.1mm; }
+.print-root .strip .notch-numbers.pair .num + .num::before { left: -1.5mm; width: 0.2mm; }
+.print-root .strip .notch-numbers.apt.tier-s  { font-size: 5.6mm; }
+.print-root .strip .notch-numbers.apt.tier-m  { font-size: 4.8mm; }
+.print-root .strip .notch-numbers.apt.tier-l  { font-size: 4mm;   }
+.print-root .strip .notch-numbers.apt.tier-xl { font-size: 3.4mm; }
+.print-root .strip .notch-units { font-size: 3mm; }
+.print-root .strip .label-row { font-size: 4mm; }
+.print-root .strip-end { width: 29mm; font-size: 3mm; }
+.print-root .strip-end .id { font-size: 4.4mm; }
+
+/* v0.6: tiled (cut-section) printing for A4/A3. The strip is broken into
+   page-width rows that stack tightly down each sheet, separated only by a thin
+   black cut line (no gaps — saves paper and eases cutting). Each piece carries
+   a 10mm blank tail at its end for overlap during physical installation. */
+.print-root .strip-sheet { break-after: page; page-break-after: always; }
+.print-root .strip-sheet:last-child { break-after: auto; page-break-after: auto; }
+.print-root .tile-row {
+  display: block;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border-bottom: 0.4mm solid #000;
+}
+.print-root .tile-row:last-child { border-bottom: 0; }
+.print-root .tile-row .strip { box-shadow: none; border-radius: 0; }
+/* fixed 10mm blank tail at the trailing end of every printed strip piece */
+.print-root .tile-end-pad { flex: 0 0 10mm; width: 10mm; align-self: stretch; }
+
+/* -------------------------------------------------------------------------
+   REPORT (load-balance PDF)
+   ------------------------------------------------------------------------- */
+.report-root {
+  background: white;
+  color: #15140f;
+  font-family: var(--ff-sans);
+  padding: 0;
+}
+.report-page {
+  background: white;
+  color: #15140f;
+  padding: 0;
+}
+.report-h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+.report-sub {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: #6a6962;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 18px;
+}
+.report-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 22px;
+  margin: 14px 0 20px;
+  padding: 12px 14px;
+  background: #f5f1e6;
+  border: 1px solid #ddd5c2;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.report-meta .row { display: flex; gap: 8px; align-items: baseline; }
+.report-meta .k {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8a8678;
+  min-width: 90px;
+}
+.report-meta .v {
+  font-weight: 600;
+  color: #1f1d17;
+  text-transform: uppercase;
+}
+.report-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #6a6962;
+  margin: 22px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #ddd5c2;
+}
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+  font-size: 12px;
+}
+.report-table th {
+  text-align: left;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8678;
+  padding: 8px 10px;
+  border-bottom: 1px solid #ddd5c2;
+  background: #faf6ea;
+}
+.report-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #ebe5d4;
+}
+.report-table .num {
+  font-family: var(--ff-mono);
+  text-align: right;
+  font-weight: 600;
+}
+.report-table .delta {
+  font-family: var(--ff-mono);
+  text-align: right;
+  font-size: 11px;
+  color: #6a6962;
+}
+.report-table .delta.high { color: #b3631e; font-weight: 700; }
+.report-table .delta.even { color: #4a7036; font-weight: 600; }
+.report-table tr.total td {
+  background: #f5f1e6;
+  font-weight: 700;
+  border-top: 1.5px solid #c4ba9e;
+}
+.report-balance {
+  display: flex;
+  gap: 12px;
+  margin: 6px 0 18px;
+}
+.report-balance .card {
+  flex: 1;
+  background: #faf6ea;
+  border: 1px solid #ddd5c2;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.report-balance .card .label {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8a8678;
+  margin-bottom: 2px;
+}
+.report-balance .card .value {
+  font-family: var(--ff-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f1d17;
+}
+.report-balance .card .sub {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: #6a6962;
+  margin-top: 2px;
+}
+.report-footnote {
+  font-size: 10px;
+  color: #8a8678;
+  font-style: italic;
+  margin-top: 14px;
+  line-height: 1.5;
+}
+
+/* Report shown inside an in-app modal preview */
+.report-modal {
+  max-width: 880px;
+  width: 92vw;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+.report-modal h2 { margin: 0; }
+.report-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+  gap: 12px;
+}
+.report-preview-scroll {
+  flex: 1;
+  overflow-y: auto;
+  background: white;
+  color: #15140f;
+  border-radius: 6px;
+  padding: 28px 32px;
+  border: 1px solid var(--border);
+}
+
+/* -------------------------------------------------------------------------
+   MISC
+   ------------------------------------------------------------------------- */
+.hidden { display: none !important; }
+.muted { color: var(--text-muted); }
+.dim   { color: var(--text-dim); }
+.mono  { font-family: var(--ff-mono); }
+.kbd {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--text-muted);
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 6px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--surface-4); }
+
+/* tiny info banner */
+.banner {
+  background: linear-gradient(180deg, var(--accent-soft), transparent);
+  border: 1px solid rgba(229,48,43,0.3);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 13px;
+  margin-bottom: 18px;
+  color: var(--text);
+}
+.banner .label {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-right: 8px;
+}
+
+/* -------------------------------------------------------------------------
+   TOP-RIGHT MENU (kebab dropdown)
+   ------------------------------------------------------------------------- */
+.menu-wrap { position: relative; }
+.menu-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 6px;
+  z-index: 250;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.menu-dropdown[hidden] { display: none; }
+.menu-item {
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.menu-item:hover { background: var(--surface-3); }
+.menu-sep { height: 1px; background: var(--border); margin: 4px 2px; }
+
+/* -------------------------------------------------------------------------
+   CHANGELOG TIMELINE (modal)
+   ------------------------------------------------------------------------- */
+.changelog-scroll {
+  max-height: 64vh;
+  overflow-y: auto;
+  margin: 4px -4px 0;
+  padding: 4px 4px 0;
+}
+.timeline { position: relative; padding-left: 22px; }
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--border-strong);
+}
+.tl-entry { position: relative; padding: 0 0 18px; }
+.tl-entry:last-child { padding-bottom: 2px; }
+.tl-entry::before {
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--border-strong);
+}
+.tl-entry.latest::before { background: var(--accent); border-color: var(--accent); }
+.tl-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.tl-ver {
+  font-family: var(--ff-mono);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+}
+.tl-entry.latest .tl-ver { color: var(--accent-strong); }
+.tl-date {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+.tl-tag {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+.tl-list { margin: 0; padding-left: 18px; color: var(--text-muted); }
+.tl-list li { margin: 2px 0; font-size: 13px; line-height: 1.45; }
+
+/* -------------------------------------------------------------------------
+   AUTH GATE (client-side deterrent — see notes in <script>)
+   ------------------------------------------------------------------------- */
+.auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.auth-card {
+  width: 100%;
+  max-width: 340px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 26px 24px;
+  text-align: center;
+}
+.auth-card .brand-mark { font-size: 30px; color: var(--accent); display: block; margin-bottom: 6px; }
+.auth-card h1 {
+  font-family: var(--ff-mono);
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  margin: 0 0 4px;
+}
+.auth-card p { color: var(--text-muted); font-size: 12px; margin: 0 0 18px; }
+.auth-card input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: var(--ff-mono);
+  text-align: center;
+}
+.auth-card input:focus { outline: 0; border-color: var(--accent); }
+.auth-card button {
+  width: 100%;
+  margin-top: 12px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+.auth-card button:hover { background: var(--accent-strong); }
+.auth-card .auth-err {
+  color: var(--danger);
+  font-size: 12px;
+  min-height: 16px;
+  margin-top: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="auth-gate" id="auth-gate">
+  <form class="auth-card" id="auth-form" autocomplete="off">
+    <span class="brand-mark">▤</span>
+    <h1>STRIPMAKER</h1>
+    <p>This tool is private. Enter the password to continue.</p>
+    <input type="password" id="auth-input" placeholder="Password" autofocus aria-label="Password">
+    <button type="submit">Unlock</button>
+    <div class="auth-err" id="auth-err"></div>
+  </form>
+</div>
+
+<header class="topbar">
+  <div class="brand" id="btn-home-brand" title="Go to home / dashboard" style="cursor:pointer;">
+    <span class="brand-mark">▤</span>
+    <span class="brand-name">STRIPMAKER</span>
+    <span class="brand-version">v0.6</span>
+  </div>
+  <nav class="topnav">
+    <button data-view="browse" id="btn-browse" class="active" title="Go to home / dashboard">Home</button>
+  </nav>
+  <div class="topactions">
+    <div class="menu-wrap">
+      <button class="tbtn ghost" id="btn-menu" title="Menu" aria-haspopup="true" aria-expanded="false">⋮ Menu</button>
+      <div class="menu-dropdown" id="menu-dropdown" hidden>
+        <button class="menu-item" id="mi-advprint">⎙ Advanced print (bulk)</button>
+        <div class="menu-sep"></div>
+        <button class="menu-item" id="mi-import">↥ Import JSON</button>
+        <button class="menu-item" id="mi-export">↧ Export JSON</button>
+        <div class="menu-sep"></div>
+        <button class="menu-item" id="mi-changelog">🕑 What's new / changelog</button>
+      </div>
+    </div>
+    <input type="file" id="file-import" accept="application/json" hidden>
+  </div>
+</header>
+
+<main id="app-root"></main>
+<div id="print-root" class="print-root"></div>
+<div id="report-root" class="report-root"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+/* =========================================================================
+   STRIPMAKER · v0.5
+   ========================================================================= */
+
+const VERSION = '0.6';
+
+// Release history. Most-recent-first; rendered as a timeline in the
+// "What's new / changelog" menu item. Add a new entry at the TOP for each
+// released version.
+const CHANGELOG = [
+  {
+    version: '0.6',
+    date: '2026-06-06',
+    notes: [
+      'Print: choose A4 or A3 (portrait/landscape). The strip now tiles across page-width chunks with cut & overlap guides so it prints on ordinary small printers and wastes less paper.',
+      'Version notes moved out of the editor into this changelog timeline, reached from the top-right Menu (which also holds Import / Export JSON).',
+      'Blank "house number" cell: add a sub-cell with no unit letter so "4" and "4A" share one notch. The blank cell is the house at the plain number — a real delivery — and IS counted in the report.',
+      'Auto-merge: a bare number immediately followed by an apartment of the same number now collapses into a single notch (e.g. "4" + "4A"), while still counting as two deliveries.',
+      'WCC registry: manage your WCCs in one place; the Round dialog autofills the WCC by number or name.',
+      'Editor navigation: jump to the previous / next sub-side of the current side without returning to the library.',
+      'Paired numbers always render on one line and shrink to fit — no more layered/overlapping digits. Street names may be clipped; numbers never are.',
+      'Tiled print is tighter: pieces stack with no gaps, divided by a single black cut line (less paper, easier cutting), and each piece has a fixed 10mm blank tail for overlap on install.',
+      'Advanced print (Menu): bulk-print all strips for a whole WCC, a round, or a single side.',
+      'NJM / Commercial flags no longer clutter the printed strip — they remain in the editor and the report.',
+      'Renamed the Browse button to Home; the STRIPMAKER logo now also returns to the dashboard.',
+      'Added a client-side password gate so the tool can be hosted on a public URL (e.g. GitHub Pages) without strangers using it. (Deterrent only — your data stays in your browser.)',
+    ],
+  },
+  {
+    version: '0.5',
+    date: '2026-05-27',
+    notes: [
+      'Reverted address auto-merge: duplicate numbers like "4" + "4 unit A" render as separate notches again (the bare one pairs, the apartment gets its own).',
+      'Pairs of 3-digit numbers stacked vertically so every digit stayed visible (superseded in v0.6).',
+      'Confirmed physical strip dimensions: 920mm × 21mm, 14.5mm per notch, 60-notch cap.',
+    ],
+  },
+  {
+    version: '0.3',
+    date: '2026-05-17',
+    notes: [
+      'Per-unit flags: each apartment unit can be individually marked No-Junk-Mail or Commercial.',
+      'Load-balance report accounts for unit-level flags.',
+    ],
+  },
+  {
+    version: '0.2',
+    date: '2026-05-01',
+    notes: [
+      'Added WCC contact email and round PDO (name / APS) metadata, surfaced in the report.',
+      'Address-level No-Junk-Mail and Commercial flags.',
+    ],
+  },
+  {
+    version: '0.1',
+    date: '2026-04-15',
+    notes: [
+      'Initial creation and project planning: defined the WCC → Round → Side → Sub-side → Section → Address → Unit model.',
+      'First single-file build — browse library, strip editor with sections and notches, double/single notch modes, and the 60-notch cap.',
+      'Local persistence in the browser plus JSON export/import.',
+    ],
+  },
+];
+
+// Hard cap: 60 sequence notches per strip. This is a user-imposed limit, NOT
+// derived from physical width. Physical Australia Post strip dimensions
+// (confirmed 2026-05-28) are: 920 mm wide × 21 mm tall, 14.5 mm per notch,
+// so geometry alone would allow up to 63 notches — but the cap is 60 by design.
+// The 2-notch round-end marker is allowed to overhang the physical strip
+// holder, so it does NOT consume part of the 60 budget.
+const MAX_NOTCHES = 60;
+const NEAR_LIMIT  = 55;
+const STORAGE_KEY = 'stripmaker_db_v1';
+
+const DEFAULT_PALETTE = [
+  // Reds / pinks / corals
+  { name: 'Salmon',     bg: '#f6c8c2' },
+  { name: 'Pink',       bg: '#f3b4b9' },
+  { name: 'Coral',      bg: '#f49d8f' },
+  { name: 'Rose',       bg: '#e8a6a6' },
+  { name: 'Blush',      bg: '#f4d4d8' },
+  { name: 'Watermelon', bg: '#e8736d' },
+  // Oranges / yellows
+  { name: 'Peach',      bg: '#f8c79d' },
+  { name: 'Apricot',    bg: '#f6b87a' },
+  { name: 'Marigold',   bg: '#f1a04a' },
+  { name: 'Lemon',      bg: '#f3e08a' },
+  { name: 'Mustard',    bg: '#e6c34e' },
+  { name: 'Honey',      bg: '#d9a83a' },
+  // Greens
+  { name: 'Lime',       bg: '#d4e29a' },
+  { name: 'Mint',       bg: '#b6dab6' },
+  { name: 'Sage',       bg: '#c2cf9f' },
+  { name: 'Forest',     bg: '#6a9c5a' },
+  { name: 'Olive',      bg: '#9aa86b' },
+  { name: 'Teal',       bg: '#7ec0b8' },
+  // Blues
+  { name: 'Sky',        bg: '#bdd3e3' },
+  { name: 'Steel',      bg: '#94b3cf' },
+  { name: 'Denim',      bg: '#6b94b8' },
+  { name: 'Cobalt',     bg: '#4f7eb0' },
+  { name: 'Ice',        bg: '#d4e6ef' },
+  // Purples
+  { name: 'Lavender',   bg: '#cdc2dc' },
+  { name: 'Plum',       bg: '#a695c0' },
+  { name: 'Mauve',      bg: '#bc9bc4' },
+  { name: 'Orchid',     bg: '#d8a8d4' },
+  // Neutrals
+  { name: 'Cream',      bg: '#f0e9d8' },
+  { name: 'Sand',       bg: '#e8d9b6' },
+  { name: 'White',      bg: '#f7f3ea' },
+  { name: 'Pearl',      bg: '#e6e1d4' },
+  { name: 'Stone',      bg: '#cfc8b8' },
+  { name: 'Khaki',      bg: '#b8a983' },
+];
+
+// Convert hex to HSL for color-distance calculations
+function hexToHsl(hex) {
+  if (!hex || hex[0] !== '#') return [0, 0, 0];
+  const c = hex.replace('#', '');
+  const fc = c.length === 3 ? c.split('').map(x => x + x).join('') : c.padEnd(6, '0').slice(0, 6);
+  const r = parseInt(fc.slice(0,2), 16) / 255;
+  const g = parseInt(fc.slice(2,4), 16) / 255;
+  const b = parseInt(fc.slice(4,6), 16) / 255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  const l = (max + min) / 2;
+  let h, s;
+  if (max === min) { h = 0; s = 0; }
+  else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
+      case g: h = ((b - r) / d + 2); break;
+      case b: h = ((r - g) / d + 4); break;
+    }
+    h *= 60;
+  }
+  return [h, s, l];
+}
+
+function colorDistance(a, b) {
+  const [h1, s1, l1] = hexToHsl(a);
+  const [h2, s2, l2] = hexToHsl(b);
+  // Hue is circular
+  let dh = Math.abs(h1 - h2);
+  if (dh > 180) dh = 360 - dh;
+  return dh * 1.0 + Math.abs(s1 - s2) * 60 + Math.abs(l1 - l2) * 40;
+}
+
+// Pick a color for a new section: prefer something unused on the strip
+// and visually distant from the previous section (so adjacent sections differ).
+function pickColorForNewSection(strip) {
+  const used = new Set(strip.sections.map(s => s.color.toLowerCase()));
+  const prev = strip.sections.length ? strip.sections[strip.sections.length - 1].color : null;
+  // First pass: prefer unused colors, ranked by distance from prev
+  const unused = DEFAULT_PALETTE.filter(p => !used.has(p.bg.toLowerCase()));
+  const pool = unused.length ? unused : DEFAULT_PALETTE;
+  if (!prev) return pool[Math.floor(Math.random() * Math.min(8, pool.length))].bg;
+  // Score each candidate
+  const scored = pool.map(p => ({ bg: p.bg, dist: colorDistance(prev, p.bg) }));
+  scored.sort((a, b) => b.dist - a.dist);
+  // Pick from the top few most-distant to add a bit of variety
+  const top = scored.slice(0, Math.min(5, scored.length));
+  return top[Math.floor(Math.random() * top.length)].bg;
+}
+
+// ============== STATE ==============
+let State = loadState();
+let UI = {
+  view: 'browse',       // 'browse' | 'editor'
+  editor: {
+    wccCode: null,
+    roundNum: null,
+    sideLetter: null,
+    subNum: null,
+    selectedSectionId: null,
+    zoom: 1.0,
+  },
+  modal: null,
+};
+
+// ============== STORAGE ==============
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && typeof s === 'object' && s.wccs) return migrate(s);
+    }
+  } catch (e) { console.warn('load failed', e); }
+  return { version: VERSION, wccs: {}, wccRegistry: {} };
+}
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(State));
+  } catch (e) {
+    toast('Could not save — storage may be full', 'danger');
+  }
+}
+
+// Migrate older state objects so newer fields exist with sensible defaults.
+function migrate(s) {
+  s.version = VERSION;
+  // v0.6: standalone WCC registry (a local index of known WCCs, independent of
+  // whether any rounds exist yet). Back-fill it from existing round data.
+  if (!s.wccRegistry || typeof s.wccRegistry !== 'object') s.wccRegistry = {};
+  for (const wcc of Object.values(s.wccs || {})) {
+    if (wcc.contactEmail === undefined) wcc.contactEmail = '';
+    if (!s.wccRegistry[wcc.code]) {
+      s.wccRegistry[wcc.code] = { code: wcc.code, label: wcc.label || '', contactEmail: wcc.contactEmail || '' };
+    }
+    for (const r of Object.values(wcc.rounds || {})) {
+      if (r.pdoName === undefined) r.pdoName = '';
+      if (r.pdoAps === undefined)  r.pdoAps  = '';
+      for (const side of Object.values(r.sides || {})) {
+        for (const sub of Object.values(side.subSides || {})) {
+          for (const sec of sub.sections || []) {
+            for (const a of sec.addresses || []) {
+              if (a.noJunkMail === undefined)  a.noJunkMail  = false;
+              if (a.isCommercial === undefined) a.isCommercial = false;
+              // v0.3: per-unit flags
+              for (const u of a.units || []) {
+                if (u.noJunkMail === undefined)  u.noJunkMail  = false;
+                if (u.isCommercial === undefined) u.isCommercial = false;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return s;
+}
+
+// ============== HELPERS ==============
+function uid(prefix='id') {
+  return prefix + '_' + Math.random().toString(36).slice(2, 10);
+}
+function $(sel, root=document) { return root.querySelector(sel); }
+function $$(sel, root=document) { return Array.from(root.querySelectorAll(sel)); }
+
+function h(tag, attrs={}, children=[]) {
+  if (typeof attrs === 'string' || Array.isArray(attrs) || attrs instanceof Node) {
+    children = attrs; attrs = {};
+  }
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if (k === 'dataset' && typeof v === 'object') Object.assign(el.dataset, v);
+    else if (k === 'html') el.innerHTML = v;
+    else if (k.startsWith('on') && typeof v === 'function') {
+      el.addEventListener(k.slice(2).toLowerCase(), v);
+    } else {
+      el.setAttribute(k, v === true ? '' : String(v));
+    }
+  }
+  const kids = Array.isArray(children) ? children : [children];
+  for (const c of kids) {
+    if (c == null || c === false) continue;
+    if (typeof c === 'string' || typeof c === 'number') {
+      el.appendChild(document.createTextNode(String(c)));
+    } else if (c instanceof Node) {
+      el.appendChild(c);
+    }
+  }
+  return el;
+}
+
+// Pick black or white text based on background luminance
+function autoTextColor(hex) {
+  if (!hex || hex[0] !== '#') return '#000';
+  const c = hex.replace('#', '');
+  const fc = c.length === 3
+    ? c.split('').map(x => x + x).join('')
+    : c.padEnd(6, '0').slice(0, 6);
+  const r = parseInt(fc.slice(0,2), 16) / 255;
+  const g = parseInt(fc.slice(2,4), 16) / 255;
+  const b = parseInt(fc.slice(4,6), 16) / 255;
+  const lin = (v) => v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4);
+  const L = 0.2126*lin(r) + 0.7152*lin(g) + 0.0722*lin(b);
+  return L > 0.55 ? '#000' : '#fff';
+}
+
+function getTextColor(section) {
+  if (section.textColor && section.textColor !== 'auto') return section.textColor;
+  return autoTextColor(section.color);
+}
+
+function toast(msg, kind='') {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + kind;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = 'toast ' + kind; }, 2200);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+// ============== DATA OPS ==============
+// ---- WCC registry (local index of known WCCs) ----
+function wccRegistry() {
+  if (!State.wccRegistry) State.wccRegistry = {};
+  return State.wccRegistry;
+}
+function registerWcc(code, label = '', contactEmail = '') {
+  const reg = wccRegistry();
+  if (!reg[code]) reg[code] = { code, label, contactEmail };
+  else {
+    if (label) reg[code].label = label;
+    if (contactEmail) reg[code].contactEmail = contactEmail;
+  }
+  return reg[code];
+}
+function lookupWccByText(text) {
+  const q = String(text || '').trim().toUpperCase();
+  if (!q) return null;
+  const reg = wccRegistry();
+  if (reg[q]) return reg[q];                              // exact code
+  const byLabel = Object.values(reg).find(w => (w.label || '').toUpperCase() === q);
+  return byLabel || null;
+}
+
+function ensureWcc(code) {
+  if (!State.wccs[code]) {
+    // Pull label/email from the registry if this WCC is already known.
+    const reg = wccRegistry()[code];
+    State.wccs[code] = {
+      code,
+      label: reg ? (reg.label || '') : '',
+      contactEmail: reg ? (reg.contactEmail || '') : '',
+      rounds: {},
+    };
+  }
+  // Keep the registry in sync.
+  registerWcc(code, State.wccs[code].label, State.wccs[code].contactEmail);
+  return State.wccs[code];
+}
+function ensureRound(wccCode, roundNum) {
+  const w = ensureWcc(wccCode);
+  if (!w.rounds[roundNum]) {
+    w.rounds[roundNum] = { number: roundNum, label: '', pdoName: '', pdoAps: '', sides: {} };
+  }
+  return w.rounds[roundNum];
+}
+function ensureSide(wccCode, roundNum, letter) {
+  const r = ensureRound(wccCode, roundNum);
+  if (!r.sides[letter]) {
+    r.sides[letter] = { letter, label: '', subSides: {} };
+  }
+  return r.sides[letter];
+}
+function ensureSubSide(wccCode, roundNum, letter, subNum) {
+  const s = ensureSide(wccCode, roundNum, letter);
+  const k = String(subNum);
+  if (!s.subSides[k]) {
+    s.subSides[k] = { number: subNum, sections: [] };
+  }
+  return s.subSides[k];
+}
+
+function getStrip(wcc, rnd, side, sub) {
+  return State.wccs?.[wcc]?.rounds?.[rnd]?.sides?.[side]?.subSides?.[String(sub)];
+}
+
+function addSection(strip, opts={}) {
+  const s = {
+    id: uid('sec'),
+    label: opts.label || '',
+    color: opts.color || pickColorForNewSection(strip),
+    textColor: opts.textColor || 'auto',
+    notchMode: opts.notchMode || 'double',
+    addresses: opts.addresses || [],
+  };
+  strip.sections.push(s);
+  saveState();
+  return s;
+}
+
+function addAddress(section, number, units=[]) {
+  const a = {
+    id: uid('a'),
+    number: String(number || '').trim().toUpperCase(),
+    units: units.map(u => ({ id: uid('u'), label: String(u).trim().toUpperCase(), noJunkMail: false, isCommercial: false })),
+    noJunkMail: false,
+    isCommercial: false,
+  };
+  section.addresses.push(a);
+  saveState();
+  return a;
+}
+
+// Parse a bulk address string into address numbers.
+// Supports ranges like "1-9" (odd → 1,3,5,7,9), "12-18" (even), "33-25" (descending).
+// Range parity comes from the start number; if start & end have different parity, step 1.
+// Mixed with comma/whitespace-separated singles: "40-32, 30, 28A".
+function parseBulkRanges(text) {
+  const result = [];
+  const tokens = text.split(/[,\n]+/).flatMap(p => p.split(/\s+/)).map(t => t.trim()).filter(Boolean);
+  for (const tok of tokens) {
+    const m = tok.match(/^(\d+)\s*-\s*(\d+)$/);
+    if (m) {
+      const a = parseInt(m[1], 10);
+      const b = parseInt(m[2], 10);
+      if (isNaN(a) || isNaN(b)) { result.push(tok); continue; }
+      const sameParity = (a % 2) === (b % 2);
+      const step = sameParity ? 2 : 1;
+      const dir = a <= b ? 1 : -1;
+      const max = 500; // safety cap
+      let count = 0;
+      for (let n = a; (dir > 0 ? n <= b : n >= b) && count < max; n += dir * step) {
+        result.push(String(n));
+        count++;
+      }
+    } else {
+      result.push(tok);
+    }
+  }
+  return result;
+}
+
+function deleteSection(strip, sectionId) {
+  const i = strip.sections.findIndex(s => s.id === sectionId);
+  if (i >= 0) strip.sections.splice(i, 1);
+  saveState();
+}
+function moveSection(strip, sectionId, dir) {
+  const i = strip.sections.findIndex(s => s.id === sectionId);
+  if (i < 0) return;
+  const j = i + dir;
+  if (j < 0 || j >= strip.sections.length) return;
+  [strip.sections[i], strip.sections[j]] = [strip.sections[j], strip.sections[i]];
+  saveState();
+}
+function duplicateSection(strip, sectionId) {
+  const orig = strip.sections.find(s => s.id === sectionId);
+  if (!orig) return;
+  const copy = JSON.parse(JSON.stringify(orig));
+  copy.id = uid('sec');
+  copy.addresses.forEach(a => {
+    a.id = uid('a');
+    a.units.forEach(u => u.id = uid('u'));
+  });
+  // v0.2: duplicates go to the END of the strip, not adjacent to the source
+  strip.sections.push(copy);
+  saveState();
+  return copy;
+}
+
+// ============== LAYOUT ENGINE ==============
+// Compute the notch layout for a section. Returns an array of "cells",
+// each cell is one notch worth of width (= one --notch-w).
+// An "empty" unit is a sub-cell with no unit letter — it represents the house
+// at the plain street number (e.g. "4" sitting next to "4A"). It IS a real
+// delivery and is counted in the report; "empty" only affects how it's drawn
+// (a blank cell, matching the physical strip) and labelled in the editor.
+function isEmptyUnit(u) {
+  const l = (u && u.label != null) ? String(u.label).trim() : '';
+  return u && (u._empty === true || l === '' || l === '_');
+}
+
+// Normalise a number for comparison ("4" === "4", " 4 " === "4").
+function sameNumber(x, y) {
+  return String(x || '').trim().toUpperCase() === String(y || '').trim().toUpperCase();
+}
+
+// v0.6 auto-merge: a bare number immediately followed by an apartment of the
+// SAME number collapses into a single notch. The bare number's slot is kept
+// visually by prepending one empty unit to the apartment (so "4" then unit "A"
+// share one notch, matching the physical strip). Non-destructive: returns a new
+// list with a shallow-cloned merged address; the stored data is untouched.
+function mergeConsecutiveAddresses(addresses) {
+  const src = addresses || [];
+  const out = [];
+  for (let i = 0; i < src.length; i++) {
+    const a = src[i];
+    const b = src[i + 1];
+    const aBare = !(a.units && a.units.length);
+    const bApt  = b && b.units && b.units.length;
+    if (aBare && bApt && sameNumber(a.number, b.number)) {
+      out.push(Object.assign({}, b, {
+        units: [{ id: 'u_merge_' + (b.id || i), label: '_', _empty: true, noJunkMail: false, isCommercial: false }, ...b.units],
+      }));
+      i++; // consume the apartment we merged into
+    } else {
+      out.push(a);
+    }
+  }
+  return out;
+}
+
+// Pick a font-size tier based on the max digit-count present in a cell, so that
+// "1|3" can be larger than "33|35" can be larger than "122|124", with each
+// number sitting comfortably inside its notch with clear separation.
+function digitTier(maxLen) {
+  if (maxLen <= 1) return 'tier-s';
+  if (maxLen <= 2) return 'tier-m';
+  if (maxLen <= 3) return 'tier-l';
+  return 'tier-xl';
+}
+
+// Build the list of physical "cells" (notches) for a section.
+// Each cell carries a `width` measured in standard notches.
+// Apartment addresses are split into segments of up to 10 units each, so the
+// parent house number can repeat along the strip (one "72" every ~10 units).
+function layoutSection(section) {
+  const cells = [];
+  const mode = section.notchMode;            // 'double' | 'single'
+  const perNotch = mode === 'double' ? 2 : 1;
+  const MAX_UNITS_PER_SEG = 10;
+  const addrs = mergeConsecutiveAddresses(section.addresses); // v0.4: merge consecutive duplicates
+  let i = 0;
+  while (i < addrs.length) {
+    const a = addrs[i];
+    const hasUnits = a.units && a.units.length > 0;
+    if (hasUnits) {
+      // Split into segments of <= MAX_UNITS_PER_SEG units so the address number
+      // repeats roughly every 10 units along the strip.
+      const numSegments = Math.max(1, Math.ceil(a.units.length / MAX_UNITS_PER_SEG));
+      const baseSize = Math.ceil(a.units.length / numSegments);
+      let consumed = 0;
+      for (let seg = 0; seg < numSegments; seg++) {
+        const segUnits = a.units.slice(consumed, consumed + baseSize);
+        consumed += segUnits.length;
+        if (!segUnits.length) break;
+        const width = Math.max(1, Math.ceil(segUnits.length / perNotch));
+        cells.push({
+          kind: 'apt',
+          address: a,
+          units: segUnits,
+          unitStartIndex: consumed - segUnits.length,
+          width,
+          segIndex: seg,
+          segCount: numSegments,
+          tier: digitTier(String(a.number || '').length),
+        });
+      }
+      i++;
+    } else {
+      if (mode === 'double'
+          && i + 1 < addrs.length
+          && !(addrs[i+1].units && addrs[i+1].units.length > 0)) {
+        const b = addrs[i+1];
+        cells.push({
+          kind: 'pair',
+          addresses: [a, b],
+          width: 1,
+          tier: digitTier(Math.max(String(a.number || '').length, String(b.number || '').length)),
+        });
+        i += 2;
+      } else {
+        cells.push({
+          kind: 'single',
+          address: a,
+          width: 1,
+          tier: digitTier(String(a.number || '').length),
+        });
+        i++;
+      }
+    }
+  }
+  return cells;
+}
+
+function sectionNotchCount(section) {
+  return layoutSection(section).reduce((sum, c) => sum + (c.width || 1), 0);
+}
+
+// Sum of notches across every section in a strip (sub-side). Used to enforce
+// the 60-notch hard cap.
+function stripNotchCount(strip) {
+  if (!strip || !strip.sections) return 0;
+  return strip.sections.reduce((sum, sec) => sum + sectionNotchCount(sec), 0);
+}
+
+// ============== RENDER: BROWSE ==============
+function renderBrowse() {
+  const root = $('#app-root');
+  root.innerHTML = '';
+
+  const wccCodes = Object.keys(State.wccs).sort();
+  const stripCount = wccCodes.reduce((acc, c) => {
+    const w = State.wccs[c];
+    for (const r of Object.values(w.rounds)) {
+      for (const s of Object.values(r.sides)) {
+        acc += Object.keys(s.subSides).length;
+      }
+    }
+    return acc;
+  }, 0);
+
+  const page = h('div', { class: 'page' }, [
+    h('div', { class: 'page-header' }, [
+      h('div', {}, [
+        h('h1', { class: 'page-title' }, 'Library'),
+        h('p', { class: 'page-subtitle' }, `${wccCodes.length} WCC · ${stripCount} strips`),
+      ]),
+      h('div', { class: 'actions', style: { display: 'flex', gap: '8px' } }, [
+        h('button', { class: 'tbtn ghost', onClick: () => openManageWccModal() }, 'Manage WCCs'),
+        h('button', { class: 'tbtn primary', onClick: () => openAddRoundModal() }, '+ New Round'),
+      ]),
+    ]),
+
+    !wccCodes.length
+      ? h('div', { class: 'browse-empty' }, [
+          h('h2', {}, 'Nothing here yet'),
+          h('p', {}, 'Create your first round. You\'ll add WCC, Round number, sides and sub-sides.'),
+          h('button', { class: 'tbtn primary', onClick: () => openAddRoundModal() }, '+ New Round'),
+        ])
+      : h('div', { class: 'wcc-list' }, wccCodes.map(c => renderWccCard(State.wccs[c]))),
+  ]);
+
+  root.appendChild(page);
+}
+
+function renderWccCard(wcc) {
+  const roundNums = Object.keys(wcc.rounds).sort();
+  return h('div', { class: 'wcc-card' }, [
+    h('div', { class: 'wcc-head' }, [
+      h('span', { class: 'wcc-code' }, 'WCC ' + wcc.code),
+      wcc.label ? h('span', { class: 'wcc-label' }, '· ' + wcc.label) : null,
+      wcc.contactEmail ? h('a', {
+        class: 'wcc-contact',
+        href: 'mailto:' + wcc.contactEmail,
+        title: 'Email work centre contact',
+        onClick: (e) => e.stopPropagation(),
+      }, [
+        h('span', { class: 'mail-icon' }, '✉'),
+        wcc.contactEmail,
+      ]) : null,
+      h('div', { class: 'actions' }, [
+        h('button', { class: 'tbtn ghost', onClick: () => openAddRoundModal(wcc.code) }, '+ Round'),
+        h('button', { class: 'tbtn ghost', onClick: () => openEditWccModal(wcc.code) }, 'Edit'),
+        h('button', { class: 'tbtn ghost', onClick: () => confirmDelete('WCC ' + wcc.code, () => { delete State.wccs[wcc.code]; saveState(); renderBrowse(); }) }, 'Delete'),
+      ]),
+    ]),
+    h('div', { class: 'round-list' }, roundNums.map(rn => renderRoundBlock(wcc, wcc.rounds[rn]))),
+  ]);
+}
+
+function renderRoundBlock(wcc, round) {
+  const sideLetters = ['A', 'B', 'C', 'D'].filter(l => round.sides[l]);
+  const pdoLine = (round.pdoName || round.pdoAps)
+    ? h('span', { class: 'round-pdo', title: 'Postal Delivery Officer' }, [
+        h('span', { class: 'pdo-icon' }, '◉'),
+        [round.pdoName, round.pdoAps].filter(Boolean).join(' · '),
+      ])
+    : null;
+  return h('div', { class: 'round-block' }, [
+    h('div', { class: 'round-head' }, [
+      h('span', { class: 'round-num' }, 'RND ' + round.number),
+      round.label ? h('span', { class: 'round-label' }, round.label) : null,
+      pdoLine,
+      h('div', { class: 'actions' }, [
+        h('button', { class: 'tbtn ghost', onClick: () => openReportModal(wcc, round) }, '⏍ Report'),
+        h('button', { class: 'tbtn ghost', onClick: () => openAddSideModal(wcc.code, round.number) }, '+ Side'),
+        h('button', { class: 'tbtn ghost', onClick: () => openEditRoundModal(wcc.code, round.number) }, 'Edit'),
+        h('button', { class: 'tbtn ghost', onClick: () => confirmDelete('Round ' + round.number, () => { delete wcc.rounds[round.number]; saveState(); renderBrowse(); }) }, 'Delete'),
+      ]),
+    ]),
+    h('div', { class: 'sides-grid' }, sideLetters.map(letter => renderSideCard(wcc, round, round.sides[letter]))),
+  ]);
+}
+
+function renderSideCard(wcc, round, side) {
+  const subKeys = Object.keys(side.subSides).map(Number).filter(n => !isNaN(n)).sort((a,b) => a-b);
+  // Always show 1,2,3 as placeholder options even if not yet created
+  const allSubs = [1,2,3,...subKeys].filter((v,i,a) => a.indexOf(v) === i).sort((a,b) => a-b);
+  const maxSub = allSubs.length ? Math.max(...allSubs) : 0;
+  const canAddNext = maxSub < 9;
+  const nextSubN = Math.max(maxSub + 1, 4); // After the implicit 1-3, the "+" adds 4 onwards
+
+  return h('div', { class: 'side-card' }, [
+    h('div', { class: 'side-head' }, [
+      h('span', { class: 'side-letter' }, side.letter),
+      h('span', { class: 'side-label' }, side.label || ''),
+      h('div', { class: 'actions' }, [
+        h('button', { class: 'icon-btn', title: 'Edit side', onClick: () => openEditSideModal(wcc.code, round.number, side.letter) }, '✎'),
+        h('button', { class: 'icon-btn danger', title: 'Delete side', onClick: () => confirmDelete('Side ' + side.letter, () => { delete round.sides[side.letter]; saveState(); renderBrowse(); }) }, '×'),
+      ]),
+    ]),
+    h('div', { class: 'subside-row' }, [
+      ...allSubs.map(n => {
+        const sub = side.subSides[String(n)];
+        const sections = sub ? sub.sections : [];
+        const dots = sections.slice(0, 6).map(s => h('span', { class: 'sub-dot', style: { background: s.color } }));
+        if (sections.length > 6) dots.push(h('span', { class: 'sub-dot-more' }, '+' + (sections.length - 6)));
+        const pill = h('button', {
+          class: 'subside-pill ' + (sub && sections.length ? '' : 'empty'),
+          onClick: () => openEditor(wcc.code, round.number, side.letter, n),
+        }, [
+          h('span', { class: 'sub-id' }, side.letter + n),
+          sections.length
+            ? h('span', { class: 'sub-dots' }, dots)
+            : h('span', { class: 'sub-empty' }, 'empty'),
+        ]);
+        // Only real (data-backed) subs get a remove button.
+        // Phantom 1/2/3 pills don't — there's nothing to delete yet.
+        if (!sub) return pill;
+        const removeBtn = h('button', {
+          class: 'sub-remove',
+          title: `Remove ${side.letter}${n}`,
+          onClick: (e) => {
+            e.stopPropagation();
+            const doDelete = () => {
+              delete side.subSides[String(n)];
+              saveState();
+              renderBrowse();
+            };
+            if (sections.length > 0) {
+              confirmDelete(`sub ${side.letter}${n} (${sections.length} section${sections.length===1?'':'s'} of data)`, doDelete);
+            } else {
+              doDelete();
+            }
+          },
+        }, '×');
+        return h('div', { class: 'subside-pill-wrap' }, [pill, removeBtn]);
+      }),
+      canAddNext ? h('button', {
+        class: 'subside-add',
+        title: `Add ${side.letter}${nextSubN}`,
+        onClick: () => {
+          ensureSubSide(wcc.code, round.number, side.letter, nextSubN);
+          saveState();
+          renderBrowse();
+        },
+      }, '+ SUB') : null,
+    ]),
+  ]);
+}
+
+// ============== RENDER: EDITOR ==============
+function renderEditor() {
+  const root = $('#app-root');
+  root.innerHTML = '';
+  const { wccCode, roundNum, sideLetter, subNum } = UI.editor;
+  const strip = ensureSubSide(wccCode, roundNum, sideLetter, subNum);
+
+  const totalAddresses = strip.sections.reduce((acc, s) => acc + s.addresses.length, 0);
+  const totalNotches = strip.sections.reduce((acc, s) => acc + sectionNotchCount(s), 0);
+
+  // Build the live preview
+  const previewStrip = renderStripDOM(strip, { interactive: true });
+
+  // Inspector
+  const selectedSection = strip.sections.find(s => s.id === UI.editor.selectedSectionId);
+
+  const sectionTabs = buildSectionTabs(strip);
+
+  const inspector = selectedSection
+    ? renderInspector(strip, selectedSection)
+    : h('div', { class: 'inspector-empty' }, [
+        h('p', {}, strip.sections.length ? 'SELECT A SECTION ABOVE TO EDIT IT.' : 'NO SECTIONS YET. ADD YOUR FIRST ONE TO START BUILDING THE STRIP.'),
+        h('button', { class: 'tbtn primary', onClick: () => {
+          const newSec = addSection(strip, { label: '' });
+          UI.editor.selectedSectionId = newSec.id;
+          renderEditorPreserveScroll();
+        }}, '+ ADD FIRST SECTION'),
+      ]);
+
+  const stripIdLabel = sideLetter + subNum;
+  const page = h('div', { class: 'page' }, [
+    h('div', { class: 'editor-header' }, [
+      h('button', { class: 'tbtn ghost', onClick: backToBrowse }, '← Back'),
+      (() => {
+        // Prev/next navigation across the sub-sides of the current side.
+        const side = ensureSide(wccCode, roundNum, sideLetter);
+        const subs = Object.keys(side.subSides).map(Number).filter(n => !isNaN(n)).sort((a, b) => a - b);
+        const pos = subs.indexOf(Number(subNum));
+        const prevN = pos > 0 ? subs[pos - 1] : null;
+        const nextN = (pos >= 0 && pos < subs.length - 1) ? subs[pos + 1] : null;
+        return h('div', { class: 'sub-nav' }, [
+          h('button', {
+            class: 'tbtn ghost', disabled: prevN === null,
+            title: prevN !== null ? `Go to ${sideLetter}${prevN}` : 'No earlier sub-side',
+            onClick: () => { if (prevN !== null) openEditor(wccCode, roundNum, sideLetter, prevN); },
+          }, '‹ Prev'),
+          h('button', {
+            class: 'tbtn ghost', disabled: nextN === null,
+            title: nextN !== null ? `Go to ${sideLetter}${nextN}` : 'No later sub-side',
+            onClick: () => { if (nextN !== null) openEditor(wccCode, roundNum, sideLetter, nextN); },
+          }, 'Next ›'),
+        ]);
+      })(),
+      h('div', { class: 'crumbs' }, [
+        h('span', {}, 'WCC ' + wccCode), h('span', { class: 'sep' }, '/'),
+        h('span', {}, 'RND ' + roundNum), h('span', { class: 'sep' }, '/'),
+        h('span', {}, 'Side ' + sideLetter), h('span', { class: 'sep' }, '/'),
+        h('span', { class: 'current' }, 'Sub ' + subNum),
+      ]),
+      h('div', { class: 'actions' }, [
+        h('button', { class: 'tbtn ghost', onClick: () => openCopyStripModal(strip, wccCode, roundNum, sideLetter, subNum) }, 'Copy section to…'),
+        h('button', { class: 'tbtn', onClick: () => openPrintModal(strip, stripIdLabel, roundNum) }, '⎙ Print'),
+      ]),
+    ]),
+
+    h('div', { class: 'preview-wrap' }, [
+      h('div', { class: 'preview-bar' }, [
+        h('div', { class: 'stats' }, [
+          h('span', { class: 'stat' }, [h('strong', {}, strip.sections.length), ' SECTIONS']),
+          h('span', { class: 'stat' }, [h('strong', {}, totalAddresses), ' ADDRESSES']),
+          h('span', { class: 'stat ' + (totalNotches > MAX_NOTCHES ? 'overflow' : (totalNotches >= NEAR_LIMIT ? 'near' : '')) }, [
+            h('strong', {}, totalNotches),
+            ' NOTCHES',
+            totalNotches > MAX_NOTCHES ? h('span', { class: 'over-badge', title: 'Over the 60-notch strip limit' }, ` · ${totalNotches - MAX_NOTCHES} OVER`) : null,
+            (totalNotches <= MAX_NOTCHES && totalNotches >= NEAR_LIMIT) ? h('span', { class: 'near-badge', title: 'Near the 60-notch strip limit' }, ` · ${MAX_NOTCHES - totalNotches} LEFT`) : null,
+          ]),
+          h('span', { class: 'stat' }, [h('strong', {}, `RND_${roundNum} ${stripIdLabel}`), '']),
+        ]),
+        h('div', { class: 'right' }, [
+          h('span', { class: 'mono', style: { fontSize: '10px' } }, 'ZOOM'),
+          h('div', { class: 'zoom-control' }, [
+            h('button', { onClick: () => { UI.editor.zoom = Math.max(0.5, +(UI.editor.zoom - 0.1).toFixed(2)); renderEditorPreserveScroll(); }}, '−'),
+            h('span', { class: 'level' }, Math.round(UI.editor.zoom * 100) + '%'),
+            h('button', { onClick: () => { UI.editor.zoom = Math.min(2.0, +(UI.editor.zoom + 0.1).toFixed(2)); renderEditorPreserveScroll(); }}, '+'),
+          ]),
+        ]),
+      ]),
+      h('div', { class: 'preview-scroll' }, previewStrip),
+    ]),
+
+    sectionTabs,
+    inspector,
+  ]);
+  root.appendChild(page);
+  fitNotchNumbers($('.preview-scroll'));
+}
+
+function renderStripDOM(strip, opts={}) {
+  const { interactive=false, zoom=null } = opts;
+  const z = zoom !== null ? zoom : UI.editor.zoom;
+
+  const stripEl = h('div', {
+    class: 'strip' + (strip.sections.length === 0 ? ' is-empty' : ''),
+    style: interactive ? { transform: `scale(${z})`, transformOrigin: '0 0' } : {},
+  });
+
+  if (!strip.sections.length) {
+    stripEl.appendChild(document.createTextNode('Empty strip — add a section to begin'));
+    return stripEl;
+  }
+
+  for (const sec of strip.sections) {
+    stripEl.appendChild(renderSectionDOM(sec, interactive));
+  }
+
+  // End marker
+  const idLabel = UI.editor.sideLetter && UI.editor.subNum
+    ? UI.editor.sideLetter + UI.editor.subNum
+    : '—';
+  const roundLbl = UI.editor.roundNum ? `RND_${UI.editor.roundNum}` : 'RND_____';
+  stripEl.appendChild(h('div', { class: 'strip-end' }, [
+    h('div', { class: 'rnd' }, roundLbl),
+    h('div', { class: 'id' }, idLabel),
+  ]));
+  return stripEl;
+}
+
+function renderSectionDOM(section, interactive) {
+  const cells = layoutSection(section);
+  const txt = getTextColor(section);
+  const isSelected = interactive && section.id === UI.editor.selectedSectionId;
+  const notchCount = cells.reduce((s, c) => s + (c.width || 1), 0);
+
+  const numRow = h('div', { class: 'num-row' });
+  for (const cell of cells) {
+    numRow.appendChild(renderCellDOM(cell, txt));
+  }
+
+  // The label centres when it fits and left-aligns when it overflows.
+  // Trick: flex parent with justify-content:center, child with max-width:100% +
+  // text-align:left + overflow:hidden. When the text fits the child shrinks
+  // to its content (centred); when it doesn't, the child clamps to 100% and
+  // the visible portion starts from the left.
+  const labelRow = h('div', { class: 'label-row' }, [
+    h('span', { class: 'label-text' }, section.label || '\u00A0'),
+  ]);
+
+  const section_el = h('div', {
+    class: 'strip-section' + (isSelected ? ' selected' : ''),
+    style: {
+      background: section.color,
+      color: txt,
+      width: `calc(var(--notch-w) * ${notchCount})`,
+      flex: `0 0 calc(var(--notch-w) * ${notchCount})`,
+    },
+    'data-section-id': section.id,
+    onClick: interactive ? (e) => {
+      e.stopPropagation();
+      selectSection(section.id);
+    } : null,
+  }, [
+    numRow,
+    labelRow,
+  ]);
+  return section_el;
+}
+
+// Select a section WITHOUT re-rendering the preview (preserves scroll position).
+// Only updates the inspector, tabs, and the .selected class on existing nodes.
+function selectSection(id) {
+  UI.editor.selectedSectionId = id;
+  // Update .selected class on preview sections
+  $$('.preview-scroll .strip-section').forEach(el => {
+    el.classList.toggle('selected', el.getAttribute('data-section-id') === id);
+  });
+  // Re-render inspector
+  const strip = getStrip(UI.editor.wccCode, UI.editor.roundNum, UI.editor.sideLetter, UI.editor.subNum);
+  if (!strip) return;
+  const section = strip.sections.find(s => s.id === id);
+  const inspectorEl = $('.inspector') || $('.inspector-empty');
+  const newInspector = section
+    ? renderInspector(strip, section)
+    : h('div', { class: 'inspector-empty' }, 'Section not found.');
+  inspectorEl.replaceWith(newInspector);
+  // Re-render section tabs (active state changed)
+  refreshTabs(strip);
+}
+
+function refreshTabs(strip) {
+  const tabsEl = $('.section-tabs');
+  if (!tabsEl) return;
+  const newTabs = buildSectionTabs(strip);
+  tabsEl.replaceWith(newTabs);
+}
+
+function buildSectionTabs(strip) {
+  return h('div', { class: 'section-tabs' },
+    strip.sections.map((s, i) => h('button', {
+      class: 'section-tab ' + (s.id === UI.editor.selectedSectionId ? 'active' : ''),
+      onClick: () => selectSection(s.id),
+    }, [
+      h('span', { class: 'dot', style: { background: s.color } }),
+      `${i+1}. ${s.label || '(UNTITLED)'}`,
+    ])).concat(
+      h('button', { class: 'section-tab', onClick: () => {
+        const newSec = addSection(strip, { label: '' });
+        UI.editor.selectedSectionId = newSec.id;
+        renderEditorPreserveScroll();
+      }}, '+ SECTION')
+    )
+  );
+}
+
+// Re-render the editor view but preserve horizontal preview scroll.
+function renderEditorPreserveScroll() {
+  const scroller = $('.preview-scroll');
+  const sl = scroller ? scroller.scrollLeft : 0;
+  renderEditor();
+  const newScroller = $('.preview-scroll');
+  if (newScroller) newScroller.scrollLeft = sl;
+}
+
+function renderCellDOM(cell, txt) {
+  const tier = cell.tier || 'tier-m';
+  if (cell.kind === 'pair') {
+    const [a, b] = cell.addresses;
+    return h('div', { class: 'notch' }, [
+      h('div', { class: 'notch-numbers pair ' + tier }, [
+        h('span', { class: 'num' }, a.number || '\u00A0'),
+        h('span', { class: 'num' }, b.number || '\u00A0'),
+      ]),
+    ]);
+  }
+  if (cell.kind === 'single') {
+    return h('div', { class: 'notch' }, [
+      h('div', { class: 'notch-numbers single ' + tier }, [
+        h('span', { class: 'num' }, cell.address.number || '\u00A0'),
+      ]),
+    ]);
+  }
+  if (cell.kind === 'apt') {
+    // Wide notch: parent number centred across the full segment, with the unit
+    // row divided into one cell per unit beneath it.
+    const unitsEl = h('div', { class: 'notch-units' },
+      cell.units.map(u => {
+        if (isEmptyUnit(u)) {
+          // Placeholder cell — blank, carries no flags, not a deliverable.
+          return h('div', { class: 'unit empty', title: '' }, ' ');
+        }
+        return h('div', { class: 'unit', title: u.label }, u.label || '·');
+      })
+    );
+    return h('div', {
+      class: 'notch notch-apt',
+      style: {
+        width: `calc(var(--notch-w) * ${cell.width})`,
+        flex: `0 0 calc(var(--notch-w) * ${cell.width})`,
+      },
+    }, [
+      h('div', { class: 'notch-numbers apt ' + tier }, [
+        h('span', { class: 'num' }, cell.address.number || '\u00A0'),
+      ]),
+      unitsEl,
+    ]);
+  }
+  return h('div', { class: 'notch' });
+}
+
+// v0.6: guarantee every number group fits on one line within its notch.
+// CSS tiers give a conservative starting size; this shrinks the font further
+// (down to a 4px floor) whenever content still overflows, so paired numbers
+// never layer or clip. Runs only on screen (print relies on the static CSS
+// tiers, since hidden print DOM can't be measured).
+function fitNotchNumbers(scope) {
+  const groups = $$('.notch-numbers', scope || document);
+  for (const g of groups) {
+    const nums = $$('.num', g);
+    if (!nums.length) continue;
+    nums.forEach(n => { n.style.fontSize = ''; }); // re-measure from CSS tier
+    let guard = 0;
+    while (g.scrollWidth > g.clientWidth + 0.5 && guard < 48) {
+      for (const n of nums) {
+        const cur = parseFloat(getComputedStyle(n).fontSize) || 12;
+        if (cur <= 4) { guard = 48; break; }
+        n.style.fontSize = (cur - 0.5) + 'px';
+      }
+      guard++;
+    }
+  }
+}
+
+function flagDotsForAddresses(addresses) {
+  // Surface address-level flags AND any descendant unit flags (so an apt
+  // address with one commercial unit shows the com dot).
+  let com = false, njm = false;
+  for (const a of addresses) {
+    if (!a) continue;
+    if (a.isCommercial) com = true;
+    if (a.noJunkMail)   njm = true;
+    for (const u of a.units || []) {
+      if (u.isCommercial) com = true;
+      if (u.noJunkMail)   njm = true;
+    }
+  }
+  const dots = [];
+  if (com) dots.push(h('span', { class: 'notch-flag com', title: 'COMMERCIAL' }));
+  if (njm) dots.push(h('span', { class: 'notch-flag njm', title: 'NO JUNK MAIL' }));
+  if (!dots.length) return null;
+  return h('div', { class: 'notch-flags' }, dots);
+}
+
+// ============== INSPECTOR (section detail editor) ==============
+function renderInspector(strip, section) {
+  const wrap = h('div', { class: 'inspector' });
+
+  wrap.appendChild(h('h3', {}, section.label || '(UNTITLED SECTION)'));
+  wrap.appendChild(h('div', { class: 'subtitle' }, `SECTION · ${section.addresses.length} ADDRESSES · ${sectionNotchCount(section)} NOTCHES · ${section.notchMode === 'double' ? '2 PER NOTCH' : '1 PER NOTCH'}`));
+
+  // --- Label + color + mode ---
+  const labelInput = h('input', {
+    class: 'input',
+    type: 'text',
+    value: section.label,
+    placeholder: 'e.g. CALLABONNA ST  /  VET HOSPITAL',
+    onInput: (e) => { section.label = e.target.value.toUpperCase(); saveState(); refreshPreview(strip); refreshHeader(section); },
+  });
+
+  const hexInput = h('input', {
+    class: 'input hex-input mono',
+    type: 'text',
+    value: section.color.toUpperCase(),
+    maxlength: 7,
+    onInput: (e) => {
+      const v = e.target.value.trim();
+      if (/^#?[0-9A-Fa-f]{6}$/.test(v)) {
+        section.color = v[0] === '#' ? v : '#' + v;
+        saveState();
+        refreshPreview(strip);
+        refreshPaletteSelection(wrap, section);
+      }
+    },
+  });
+
+  const paletteEl = h('div', { class: 'palette' },
+    DEFAULT_PALETTE.map(p => h('div', {
+      class: 'swatch' + (p.bg.toLowerCase() === section.color.toLowerCase() ? ' selected' : ''),
+      style: { background: p.bg },
+      title: p.name,
+      onClick: () => {
+        section.color = p.bg;
+        saveState();
+        refreshPreview(strip);
+        renderInspector_inplace(strip, section, wrap);
+      },
+    }, [
+      h('span', { class: 'check', style: { color: autoTextColor(p.bg) } },
+        p.bg.toLowerCase() === section.color.toLowerCase() ? '✓' : '')
+    ]))
+    .concat([hexInput])
+  );
+
+  const modeToggle = h('div', { class: 'toggle-group' }, [
+    h('button', {
+      class: section.notchMode === 'double' ? 'active' : '',
+      onClick: () => {
+        if (section.notchMode === 'double') return;
+        section.notchMode = 'double';
+        // Switching to double shrinks the strip, so no limit-check needed.
+        saveState(); refreshPreview(strip); refreshHeader(section);
+      },
+    }, '2 per notch'),
+    h('button', {
+      class: section.notchMode === 'single' ? 'active' : '',
+      onClick: () => {
+        if (section.notchMode === 'single') return;
+        // Probe: switching to single may roughly double this section's notch count.
+        const prev = section.notchMode;
+        section.notchMode = 'single';
+        const projected = stripNotchCount(strip);
+        if (projected > MAX_NOTCHES) {
+          section.notchMode = prev;
+          toast(`Single mode would push this strip to ${projected} notches — over the 60-notch limit. Move some sections off first.`, 'danger');
+          return;
+        }
+        saveState(); refreshPreview(strip); refreshHeader(section);
+      },
+    }, '1 per notch'),
+  ]);
+
+  const textToggle = h('div', { class: 'toggle-group' }, [
+    h('button', { class: section.textColor === 'auto' ? 'active' : '', onClick: () => { section.textColor = 'auto'; saveState(); refreshPreview(strip); refreshHeader(section); }}, 'Auto'),
+    h('button', { class: section.textColor === '#000' ? 'active' : '', onClick: () => { section.textColor = '#000'; saveState(); refreshPreview(strip); refreshHeader(section); }}, 'Black'),
+    h('button', { class: section.textColor === '#fff' ? 'active' : '', onClick: () => { section.textColor = '#fff'; saveState(); refreshPreview(strip); refreshHeader(section); }}, 'White'),
+  ]);
+
+  wrap.appendChild(h('div', { class: 'form-row' }, [
+    h('div', { class: 'field grow' }, [
+      h('label', {}, 'Label (street or business)'),
+      labelInput,
+    ]),
+    h('div', { class: 'field' }, [
+      h('label', {}, 'Notch density'),
+      modeToggle,
+    ]),
+    h('div', { class: 'field' }, [
+      h('label', {}, 'Text color'),
+      textToggle,
+    ]),
+  ]));
+
+  wrap.appendChild(h('div', { class: 'form-row' }, [
+    h('div', { class: 'field grow' }, [
+      h('label', {}, 'Background color'),
+      paletteEl,
+    ]),
+  ]));
+
+  // --- Address list ---
+  wrap.appendChild(h('div', { class: 'section-eyebrow' }, 'Addresses (driving order)'));
+  wrap.appendChild(renderAddressList(strip, section));
+
+  // --- Section actions ---
+  wrap.appendChild(h('div', { class: 'form-row', style: { marginTop: '18px', paddingTop: '16px', borderTop: '1px solid var(--border)' } }, [
+    h('button', { class: 'tbtn ghost', onClick: () => { moveSection(strip, section.id, -1); renderEditorPreserveScroll(); }}, '← Shift left'),
+    h('button', { class: 'tbtn ghost', onClick: () => { moveSection(strip, section.id, +1); renderEditorPreserveScroll(); }}, 'Shift right →'),
+    h('button', { class: 'tbtn ghost', onClick: () => {
+      // Probe: would duplicating this section push the strip over 60?
+      const dupNotches = sectionNotchCount(section);
+      if (stripNotchCount(strip) + dupNotches > MAX_NOTCHES) {
+        toast(`Duplicating would add ${dupNotches} notches — over the 60-notch limit. Move some sections off first.`, 'danger');
+        return;
+      }
+      const c = duplicateSection(strip, section.id);
+      UI.editor.selectedSectionId = c.id;
+      renderEditorPreserveScroll();
+    }}, '⎘ Duplicate to end'),
+    h('div', { style: { flex: 1 } }),
+    h('button', { class: 'tbtn danger', onClick: () => {
+      confirmDelete(`section "${section.label || 'untitled'}"`, () => {
+        deleteSection(strip, section.id);
+        UI.editor.selectedSectionId = null;
+        renderEditorPreserveScroll();
+      });
+    }}, 'Delete section'),
+  ]));
+
+  return wrap;
+}
+
+function renderInspector_inplace(strip, section, oldEl) {
+  const newEl = renderInspector(strip, section);
+  oldEl.replaceWith(newEl);
+}
+
+function refreshPreview(strip) {
+  const scroller = $('.preview-scroll');
+  if (!scroller) return;
+  scroller.innerHTML = '';
+  scroller.appendChild(renderStripDOM(strip, { interactive: true }));
+  fitNotchNumbers(scroller);
+}
+
+function refreshHeader(section) {
+  // Re-render the inspector header bits & section tabs without nuking focus inputs
+  const strip = getStrip(UI.editor.wccCode, UI.editor.roundNum, UI.editor.sideLetter, UI.editor.subNum);
+  if (!strip) return;
+  refreshTabs(strip);
+  // Update header h3 + subtitle
+  const insp = $('.inspector');
+  if (insp) {
+    const h3 = insp.querySelector('h3');
+    if (h3) h3.textContent = section.label || '(UNTITLED SECTION)';
+    const sub = insp.querySelector('.subtitle');
+    if (sub) sub.textContent = `SECTION · ${section.addresses.length} ADDRESSES · ${sectionNotchCount(section)} NOTCHES · ${section.notchMode === 'double' ? '2 PER NOTCH' : '1 PER NOTCH'}`;
+  }
+}
+
+function refreshPaletteSelection(wrap, section) {
+  const swatches = wrap.querySelectorAll('.swatch');
+  swatches.forEach(sw => {
+    const isSel = sw.style.background.includes(section.color) || rgbToHex(sw.style.background).toLowerCase() === section.color.toLowerCase();
+    sw.classList.toggle('selected', isSel);
+  });
+}
+function rgbToHex(rgb) {
+  const m = rgb.match(/\d+/g);
+  if (!m) return '#000000';
+  return '#' + m.slice(0,3).map(n => parseInt(n).toString(16).padStart(2,'0')).join('');
+}
+
+// ============== ADDRESS EDITOR ==============
+function renderAddressList(strip, section) {
+  const wrap = h('div', { class: 'addr-table-wrap' });
+
+  if (!section.addresses.length) {
+    wrap.appendChild(h('div', { style: { padding: '14px', color: 'var(--text-muted)', fontSize: '13px' } }, 'NO ADDRESSES YET — ADD SOME BELOW.'));
+  } else {
+    const table = h('table', { class: 'addr-table' }, [
+      h('thead', {}, h('tr', {}, [
+        h('th', { class: 'col-drag' }, ''),
+        h('th', { class: 'col-num' }, 'Number'),
+        h('th', { class: 'col-flags' }, 'Flags'),
+        h('th', { class: 'col-units' }, 'Apartments / Units'),
+        h('th', { class: 'col-actions' }, ''),
+      ])),
+      h('tbody', { class: 'addr-tbody' }, section.addresses.map((a, idx) => renderAddressRow(strip, section, a, idx))),
+    ]);
+    wrap.appendChild(table);
+  }
+
+  // Add row
+  let newNumInput;
+  let bulkInput;
+  const quickAdd = () => {
+    const v = newNumInput.value.trim();
+    if (!v) return;
+    // Probe: would adding push the strip over 60 notches?
+    const before = stripNotchCount(strip);
+    addAddress(section, v, []);
+    if (stripNotchCount(strip) > MAX_NOTCHES) {
+      section.addresses.pop();
+      saveState();
+      toast(`60-notch limit reached (currently ${before}). Move some sections to another strip first.`, 'danger');
+      return;
+    }
+    newNumInput.value = '';
+    renderInspector_inplace(strip, section, $('.inspector'));
+    refreshPreview(strip);
+    refreshHeader(section);
+    setTimeout(() => {
+      const newInput = $('.addr-add-row .input[data-quick]');
+      if (newInput) newInput.focus();
+    }, 0);
+  };
+  newNumInput = h('input', {
+    class: 'input mono',
+    type: 'text',
+    placeholder: 'HOUSE # (e.g. 40 OR 12A)',
+    'data-quick': '1',
+    style: { flex: '0 0 180px' },
+    onKeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); quickAdd(); } },
+    onInput: (e) => {
+      const upper = e.target.value.toUpperCase();
+      if (e.target.value !== upper) {
+        const pos = e.target.selectionStart;
+        e.target.value = upper;
+        try { e.target.setSelectionRange(pos, pos); } catch(_) {}
+      }
+    },
+  });
+
+  bulkInput = h('input', {
+    class: 'input mono',
+    type: 'text',
+    placeholder: 'BULK: 40-32, 30, 28A  ·  1-9 (odd)  ·  12-18 (even)  ·  33-25 (descending)',
+    style: { flex: 1 },
+    onInput: (e) => {
+      const upper = e.target.value.toUpperCase();
+      if (e.target.value !== upper) {
+        const pos = e.target.selectionStart;
+        e.target.value = upper;
+        try { e.target.setSelectionRange(pos, pos); } catch(_) {}
+      }
+    },
+    onKeydown: (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const v = bulkInput.value.trim();
+        if (!v) return;
+        const parts = parseBulkRanges(v);
+        let added = 0;
+        let blocked = false;
+        for (const p of parts) {
+          addAddress(section, p, []);
+          if (stripNotchCount(strip) > MAX_NOTCHES) {
+            section.addresses.pop();
+            saveState();
+            blocked = true;
+            break;
+          }
+          added++;
+        }
+        bulkInput.value = '';
+        renderInspector_inplace(strip, section, $('.inspector'));
+        refreshPreview(strip);
+        refreshHeader(section);
+        if (blocked) {
+          toast(`Added ${added} of ${parts.length} — stopped at the 60-notch limit`, 'warn');
+        } else {
+          toast(`Added ${parts.length} address${parts.length===1?'':'es'}`, 'good');
+        }
+      }
+    },
+  });
+
+  wrap.appendChild(h('div', { class: 'addr-add-row' }, [
+    newNumInput,
+    h('button', { class: 'tbtn primary', onClick: quickAdd }, '+ Add'),
+    bulkInput,
+    h('span', { class: 'kbd', style: { alignSelf: 'center' } }, '↵'),
+  ]));
+
+  return wrap;
+}
+
+function renderAddressRow(strip, section, addr, idx) {
+  const hasUnits = addr.units && addr.units.length > 0;
+
+  // number input — force uppercase, immediately reflects in the strip
+  const numInput = h('input', {
+    class: 'input mono small',
+    type: 'text',
+    value: addr.number,
+    onInput: (e) => {
+      const upper = e.target.value.toUpperCase();
+      if (e.target.value !== upper) {
+        const pos = e.target.selectionStart;
+        e.target.value = upper;
+        try { e.target.setSelectionRange(pos, pos); } catch(_) {}
+      }
+      addr.number = upper;
+      saveState();
+      refreshPreview(strip);
+    },
+  });
+
+  // Address-level flag buttons. When the address has units they act as a
+  // "set on every unit" bulk toggle instead of an address-level value.
+  const njmBtn = h('button', {
+    class: 'flag-toggle',
+    title: hasUnits
+      ? 'Toggle "No junk mail" on every unit of this address'
+      : 'Toggle "No junk mail" — exclude this address from junk-mail count',
+  }, 'NO JUNK MAIL');
+  const comBtn = h('button', {
+    class: 'flag-toggle com',
+    title: hasUnits
+      ? 'Toggle "Commercial" on every unit of this address'
+      : 'Toggle "Commercial" — mark as business / commercial premises',
+  }, 'COMMERCIAL');
+
+  const refreshAddrLevelButtons = () => {
+    if (hasUnits) {
+      const allNjm = addr.units.length > 0 && addr.units.every(u => u.noJunkMail);
+      const someNjm = addr.units.some(u => u.noJunkMail);
+      const allCom = addr.units.length > 0 && addr.units.every(u => u.isCommercial);
+      const someCom = addr.units.some(u => u.isCommercial);
+      njmBtn.classList.toggle('active',  allNjm);
+      njmBtn.classList.toggle('partial', !allNjm && someNjm);
+      comBtn.classList.toggle('active',  allCom);
+      comBtn.classList.toggle('partial', !allCom && someCom);
+    } else {
+      njmBtn.classList.toggle('active', !!addr.noJunkMail);
+      njmBtn.classList.remove('partial');
+      comBtn.classList.toggle('active', !!addr.isCommercial);
+      comBtn.classList.remove('partial');
+    }
+  };
+
+  njmBtn.onclick = () => {
+    if (hasUnits) {
+      const allOn = addr.units.every(u => u.noJunkMail);
+      for (const u of addr.units) u.noJunkMail = !allOn;
+    } else {
+      addr.noJunkMail = !addr.noJunkMail;
+    }
+    saveState();
+    refreshAddrLevelButtons();
+    refreshUnits();
+    refreshPreview(strip);
+  };
+  comBtn.onclick = () => {
+    if (hasUnits) {
+      const allOn = addr.units.every(u => u.isCommercial);
+      for (const u of addr.units) u.isCommercial = !allOn;
+    } else {
+      addr.isCommercial = !addr.isCommercial;
+    }
+    saveState();
+    refreshAddrLevelButtons();
+    refreshUnits();
+    refreshPreview(strip);
+  };
+
+  // Per-unit chips with their own flag toggles
+  const unitsWrap = h('div', { class: 'unit-chips' });
+  const refreshUnits = () => {
+    unitsWrap.innerHTML = '';
+    for (const u of addr.units) {
+      const blank = isEmptyUnit(u);
+      const chip = h('span', { class: 'unit-chip' + (blank ? ' empty' : '') + (u.noJunkMail ? ' njm' : '') + (u.isCommercial ? ' com' : '') }, [
+        h('span', { class: 'unit-label', style: blank ? { fontStyle: 'italic', opacity: '0.75' } : null },
+          blank ? '(no unit)' : u.label),
+        h('button', {
+          class: 'unit-flag-btn njm-btn' + (u.noJunkMail ? ' active' : ''),
+          title: 'Toggle no junk mail for unit ' + u.label,
+          onClick: (e) => {
+            e.stopPropagation();
+            u.noJunkMail = !u.noJunkMail;
+            saveState();
+            chip.classList.toggle('njm', u.noJunkMail);
+            e.currentTarget.classList.toggle('active', u.noJunkMail);
+            refreshAddrLevelButtons();
+            refreshPreview(strip);
+          },
+        }, 'NJM'),
+        h('button', {
+          class: 'unit-flag-btn com-btn' + (u.isCommercial ? ' active' : ''),
+          title: 'Toggle commercial for unit ' + u.label,
+          onClick: (e) => {
+            e.stopPropagation();
+            u.isCommercial = !u.isCommercial;
+            saveState();
+            chip.classList.toggle('com', u.isCommercial);
+            e.currentTarget.classList.toggle('active', u.isCommercial);
+            refreshAddrLevelButtons();
+            refreshPreview(strip);
+          },
+        }, 'COM'),
+        h('button', { class: 'unit-remove', title: 'Remove unit', onClick: (e) => {
+          e.stopPropagation();
+          const i = addr.units.indexOf(u);
+          if (i >= 0) addr.units.splice(i, 1);
+          saveState();
+          renderInspector_inplace(strip, section, $('.inspector'));
+          refreshPreview(strip);
+          refreshHeader(section);
+        }}, '×'),
+      ]);
+      unitsWrap.appendChild(chip);
+    }
+    // input to add (range-aware)
+    const ui = h('input', {
+      class: 'input small mono',
+      type: 'text',
+      placeholder: '+ UNIT (A, B  ·  1-10  ·  1, 3, 5)',
+      style: { width: '230px' },
+      onInput: (e) => {
+        const upper = e.target.value.toUpperCase();
+        if (e.target.value !== upper) {
+          const pos = e.target.selectionStart;
+          e.target.value = upper;
+          try { e.target.setSelectionRange(pos, pos); } catch(_) {}
+        }
+      },
+      onKeydown: (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const v = ui.value.trim();
+          if (!v) return;
+          const parts = parseBulkRanges(v);
+          const beforeUnits = addr.units.length;
+          let added = 0;
+          let blocked = false;
+          for (const p of parts) {
+            addr.units.push({ id: uid('u'), label: p.toUpperCase(), noJunkMail: false, isCommercial: false });
+            if (stripNotchCount(strip) > MAX_NOTCHES) {
+              addr.units.pop();
+              blocked = true;
+              break;
+            }
+            added++;
+          }
+          saveState();
+          ui.value = '';
+          renderInspector_inplace(strip, section, $('.inspector'));
+          refreshPreview(strip);
+          refreshHeader(section);
+          if (blocked) {
+            toast(`Added ${added} of ${parts.length} units — stopped at the 60-notch limit`, 'warn');
+          }
+        }
+      },
+    });
+    unitsWrap.appendChild(ui);
+    // "+ empty" — adds a blank placeholder sub-cell (used to shape an apt notch
+    // to match the physical strip). Not counted as a deliverable.
+    const emptyBtn = h('button', {
+      class: 'tbtn ghost', style: { padding: '3px 8px', fontSize: '11px' },
+      title: 'Add a blank placeholder sub-cell (not counted as mail)',
+      onClick: (e) => {
+        e.stopPropagation();
+        addr.units.push({ id: uid('u'), label: '_', _empty: true, noJunkMail: false, isCommercial: false });
+        if (stripNotchCount(strip) > MAX_NOTCHES) {
+          addr.units.pop();
+          toast('Cannot add — would exceed the 60-notch limit', 'warn');
+          return;
+        }
+        saveState();
+        renderInspector_inplace(strip, section, $('.inspector'));
+        refreshPreview(strip);
+        refreshHeader(section);
+      },
+    }, '+ empty');
+    unitsWrap.appendChild(emptyBtn);
+  };
+  refreshUnits();
+  refreshAddrLevelButtons();
+
+  // Drag-and-drop. We only flip the row to draggable while the user is
+  // mousing the handle — this stops accidental drags when they're editing.
+  const tr = h('tr', { class: 'addr-row', 'data-idx': String(idx) });
+  const handle = h('span', { class: 'drag-handle', title: 'Drag to reorder',
+    onMousedown: () => { tr.draggable = true; },
+    onMouseup:   () => { tr.draggable = false; },
+  }, '⋮⋮');
+  tr.addEventListener('dragstart', (e) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+    tr.classList.add('dragging');
+  });
+  tr.addEventListener('dragend', () => {
+    tr.draggable = false;
+    tr.classList.remove('dragging');
+    $$('.addr-row.drag-over').forEach(el => el.classList.remove('drag-over', 'drag-over-above', 'drag-over-below'));
+  });
+  tr.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const rect = tr.getBoundingClientRect();
+    const above = (e.clientY - rect.top) < (rect.height / 2);
+    tr.classList.add('drag-over');
+    tr.classList.toggle('drag-over-above', above);
+    tr.classList.toggle('drag-over-below', !above);
+  });
+  tr.addEventListener('dragleave', () => {
+    tr.classList.remove('drag-over', 'drag-over-above', 'drag-over-below');
+  });
+  tr.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    tr.classList.remove('drag-over', 'drag-over-above', 'drag-over-below');
+    if (isNaN(fromIdx) || fromIdx === idx) return;
+    const rect = tr.getBoundingClientRect();
+    const above = (e.clientY - rect.top) < (rect.height / 2);
+    let toIdx = above ? idx : idx + 1;
+    if (fromIdx < toIdx) toIdx--;
+    const [moved] = section.addresses.splice(fromIdx, 1);
+    section.addresses.splice(toIdx, 0, moved);
+    saveState();
+    renderInspector_inplace(strip, section, $('.inspector'));
+    refreshPreview(strip);
+  });
+
+  tr.appendChild(h('td', { class: 'col-drag' }, [handle]));
+  tr.appendChild(h('td', { class: 'col-num' }, [numInput]));
+  tr.appendChild(h('td', { class: 'col-flags' }, [h('div', { class: 'flag-toggle-row' }, [njmBtn, comBtn])]));
+  tr.appendChild(h('td', { class: 'col-units' }, [unitsWrap]));
+  tr.appendChild(h('td', { class: 'col-actions' }, [
+    h('button', { class: 'icon-btn', title: 'Shift up', onClick: () => {
+      if (idx <= 0) return;
+      [section.addresses[idx-1], section.addresses[idx]] = [section.addresses[idx], section.addresses[idx-1]];
+      saveState();
+      renderInspector_inplace(strip, section, $('.inspector'));
+      refreshPreview(strip);
+    }}, '↑'),
+    h('button', { class: 'icon-btn', title: 'Shift down', onClick: () => {
+      if (idx >= section.addresses.length - 1) return;
+      [section.addresses[idx], section.addresses[idx+1]] = [section.addresses[idx+1], section.addresses[idx]];
+      saveState();
+      renderInspector_inplace(strip, section, $('.inspector'));
+      refreshPreview(strip);
+    }}, '↓'),
+    h('button', { class: 'icon-btn danger', title: 'Delete', onClick: () => {
+      section.addresses.splice(idx, 1);
+      saveState();
+      renderInspector_inplace(strip, section, $('.inspector'));
+      refreshPreview(strip);
+      refreshHeader(section);
+    }}, '×'),
+  ]));
+  return tr;
+}
+
+// ============== MODALS ==============
+function openModal(content) {
+  closeModal();
+  const back = h('div', { class: 'modal-back', onClick: (e) => { if (e.target === back) closeModal(); } }, [content]);
+  document.body.appendChild(back);
+  UI.modal = back;
+  // focus first input
+  setTimeout(() => {
+    const inp = back.querySelector('input, textarea, select');
+    if (inp) inp.focus();
+  }, 50);
+}
+function closeModal() {
+  if (UI.modal) UI.modal.remove();
+  UI.modal = null;
+}
+
+function openAddRoundModal(presetWcc='') {
+  let wccInput, roundInput, labelInput, sidesInput, subsInput, wccHint;
+
+  // Resolve whatever the user typed (a code OR a label) to a registry code.
+  const resolveWcc = (raw) => {
+    const hit = lookupWccByText(raw);
+    return hit ? hit.code : String(raw || '').trim();
+  };
+
+  const submit = () => {
+    const wcc = resolveWcc(wccInput.value);
+    const rnd = roundInput.value.trim();
+    const label = labelInput.value.trim().toUpperCase();
+    if (!wcc || !rnd) { toast('WCC and Round are required', 'warn'); return; }
+    if (!label) { toast('Suburb label is required — e.g. "GIRALANG / KALEEN"', 'warn'); labelInput.focus(); return; }
+    const sides = sidesInput.value.split(',').map(x => x.trim().toUpperCase()).filter(x => /^[A-D]$/.test(x));
+    const subs = subsInput.value.split(',').map(x => parseInt(x.trim(), 10)).filter(n => !isNaN(n) && n >= 1 && n <= 9);
+    if (!sides.length) { toast('At least one side letter (A-D)', 'warn'); return; }
+    if (!subs.length) { toast('At least one sub-side number', 'warn'); return; }
+    const round = ensureRound(wcc, rnd);
+    round.label = label;
+    const rndInt = parseInt(rnd, 10);
+    for (const sl of sides) {
+      const side = ensureSide(wcc, rnd, sl);
+      // Auto-set the side label as (round + 1 for A, + 2 for B, etc.)
+      if (!side.label && !isNaN(rndInt)) {
+        const sideIndex = sl.charCodeAt(0) - 'A'.charCodeAt(0) + 1;
+        side.label = String(rndInt + sideIndex);
+      }
+      for (const sn of subs) ensureSubSide(wcc, rnd, sl, sn);
+    }
+    saveState();
+    closeModal();
+    renderBrowse();
+    toast(`Created RND ${rnd}`, 'good');
+  };
+
+  const modal = h('div', { class: 'modal' }, [
+    h('h2', {}, 'New round'),
+    h('p', { class: 'subtle' }, 'Side labels auto-increment from the round number (RND 1120 → A=1121, B=1122). The suburb label is required so the report knows which patch this round delivers.'),
+    h('div', { class: 'form-row' }, [
+      h('div', { class: 'field grow' }, [
+        h('label', {}, 'WCC  · type code or name'),
+        wccInput = h('input', { class: 'input mono', type: 'text', value: presetWcc, placeholder: '281586 or MITCHELL PARCELS',
+          list: 'wcc-options', autocomplete: 'off',
+          onInput: (e) => {
+            const hit = lookupWccByText(e.target.value);
+            wccHint.textContent = hit ? `→ ${hit.code}${hit.label ? ' · ' + hit.label : ''}` : '';
+          },
+        }),
+        h('datalist', { id: 'wcc-options' },
+          Object.values(wccRegistry()).sort((a, b) => a.code.localeCompare(b.code))
+            .map(w => h('option', { value: w.code }, w.label ? `${w.code} — ${w.label}` : w.code))
+        ),
+        wccHint = h('div', { class: 'page-subtitle', style: { marginTop: '4px', minHeight: '14px' } }, ''),
+      ]),
+      h('div', { class: 'field grow' }, [
+        h('label', {}, 'Round number (4 digits)'),
+        roundInput = h('input', { class: 'input mono', type: 'text', placeholder: '1120', maxlength: 4 }),
+      ]),
+    ]),
+    h('div', { class: 'field', style: { marginTop: '4px' } }, [
+      h('label', {}, 'Suburb(s) covered  · required'),
+      labelInput = h('input', { class: 'input', type: 'text', placeholder: 'e.g. GIRALANG / KALEEN',
+        onInput: (e) => { e.target.value = e.target.value.toUpperCase(); }
+      }),
+    ]),
+    h('div', { class: 'form-row' }, [
+      h('div', { class: 'field grow' }, [
+        h('label', {}, 'Sides'),
+        sidesInput = h('input', { class: 'input mono', type: 'text', value: 'A, B', placeholder: 'A, B' }),
+      ]),
+      h('div', { class: 'field grow' }, [
+        h('label', {}, 'Sub-sides'),
+        subsInput = h('input', { class: 'input mono', type: 'text', value: '1, 2, 3', placeholder: '1, 2, 3' }),
+      ]),
+    ]),
+    h('div', { class: 'modal-actions' }, [
+      h('button', { class: 'tbtn ghost', onClick: closeModal }, 'Cancel'),
+      h('button', { class: 'tbtn primary', onClick: submit }, 'Create'),
+    ]),
+  ]);
+
+  wccInput && (wccInput.onkeydown = (e) => { if (e.key === 'Enter') submit(); });
+  openModal(modal);
+}
+
+function openAddSideModal(wccCode, roundNum) {
+  let letterInput, labelInput, subsInput;
+  const computeSuggestedLabel = (letter) => {
+    if (!/^[A-D]$/.test(letter)) return '';
+    const rndInt = parseInt(roundNum, 10);
+    if (isNaN(rndInt)) return '';
+    const idx = letter.charCodeAt(0) - 'A'.charCodeAt(0) + 1;
+    return String(rndInt + idx);
+  };
+  const submit = () => {
+    const letter = letterInput.value.trim().toUpperCase();
+    const label = labelInput.value.trim().toUpperCase();
+    const subs = subsInput.value.split(',').map(x => parseInt(x.trim(), 10)).filter(n => !isNaN(n) && n >= 1 && n <= 9);
+    if (!/^[A-D]$/.test(letter)) { toast('Side must be A-D', 'warn'); return; }
+    const s = ensureSide(wccCode, roundNum, letter);
+    s.label = label || computeSuggestedLabel(letter);
+    for (const sn of subs) ensureSubSide(wccCode, roundNum, letter, sn);
+    saveState();
+    closeModal();
+    renderBrowse();
+  };
+  const modal = h('div', { class: 'modal' }, [
+    h('h2', {}, 'Add side to round ' + roundNum),
+    h('p', { class: 'subtle' }, 'The label auto-fills as (round + side index), e.g. RND 1120 → A=1121, B=1122. Override if you need to.'),
+    h('div', { class: 'form-row' }, [
+      h('div', { class: 'field' }, [
+        h('label', {}, 'Letter'),
+        letterInput = h('input', { class: 'input mono', type: 'text', placeholder: 'A', maxlength: 1, style: { width: '70px' },
+          onInput: (e) => {
+            e.target.value = e.target.value.toUpperCase();
+            const suggested = computeSuggestedLabel(e.target.value);
+            if (suggested && !labelInput.value) labelInput.value = suggested;
+          },
+        }),
+      ]),
+      h('div', { class: 'field grow' }, [
+        h('label', {}, 'Label (auto)'),
+        labelInput = h('input', { class: 'input mono', type: 'text', placeholder: 'e.g. 1121',
+          onInput: (e) => { e.target.value = e.target.value.toUpperCase(); }
+        }),
+      ]),
+      h('div', { class: 'field grow' }, [
+        h('label', {}, 'Sub-sides'),
+        subsInput = h('input', { class: 'input mono', type: 'text', value: '1, 2, 3' }),
+      ]),
+    ]),
+    h('div', { class: 'modal-actions' }, [
+      h('button', { class: 'tbtn ghost', onClick: closeModal }, 'Cancel'),
+      h('button', { class: 'tbtn primary', onClick: submit }, 'Save'),
+    ]),
+  ]);
+  openModal(modal);
+}
+
+function openEditWccModal(code) {
+  const wcc = State.wccs[code];
+  let labelInput, emailInput;
+  const submit = () => {
+    wcc.label = labelInput.value.trim().toUpperCase();
+    wcc.contactEmail = emailInput.value.trim();
+    // Mirror into the registry so the index stays current.
+    const reg = wccRegistry()[code] || registerWcc(code);
+    reg.label = wcc.label;
+    reg.contactEmail = wcc.contactEmail;
+    saveState();
+    closeModal();
+    renderBrowse();
+  };
+  openModal(h('div', { class: 'modal' }, [
+    h('h2', {}, 'Edit WCC ' + code),
+    h('p', { class: 'subtle' }, 'The WCC code itself is read-only. The label and contact email feed into the load-balance report.'),
+    h('div', { class: 'field' }, [
+      h('label', {}, 'Label'),
+      labelInput = h('input', { class: 'input', type: 'text', value: wcc.label || '', placeholder: 'e.g. MITCHELL PARCELS',
+        onInput: (e) => { e.target.value = e.target.value.toUpperCase(); }
+      }),
+    ]),
+    h('div', { class: 'field', style: { marginTop: '12px' } }, [
+      h('label', {}, 'Work centre contact email'),
+      emailInput = h('input', { class: 'input mono', type: 'email', value: wcc.contactEmail || '', placeholder: 'manager@auspost.com.au' }),
+    ]),
+    h('div', { class: 'modal-actions' }, [
+      h('button', { class: 'tbtn ghost', onClick: closeModal }, 'Cancel'),
+      h('button', { class: 'tbtn primary', onClick: submit }, 'Save'),
+    ]),
+  ]));
+}
+
+// v0.6: manage the local WCC registry — add / edit / remove WCC entries.
+// The WCC code is the identifier and is read-only once created; the label and
+// contact email are editable. These entries feed the autofill in the Round
+// dialog and are mirrored onto round data when a round is created.
+function openManageWccModal() {
+  const reg = wccRegistry();
+
+  const listWrap = h('div', { class: 'addr-table-wrap' });
+  const renderList = () => {
+    listWrap.innerHTML = '';
+    const codes = Object.keys(reg).sort();
+    const table = h('table', { class: 'addr-table' }, [
+      h('thead', {}, h('tr', {}, [
+        h('th', { class: 'col-num' }, 'WCC code'),
+        h('th', {}, 'Label'),
+        h('th', {}, 'Contact email'),
+        h('th', { class: 'col-actions' }, ''),
+      ])),
+      h('tbody', {}, codes.length ? codes.map(code => {
+        const w = reg[code];
+        const labelI = h('input', { class: 'input small', type: 'text', value: w.label || '', placeholder: 'e.g. MITCHELL PARCELS',
+          onInput: (e) => { e.target.value = e.target.value.toUpperCase(); w.label = e.target.value; saveState(); } });
+        const emailI = h('input', { class: 'input small mono', type: 'email', value: w.contactEmail || '', placeholder: 'manager@auspost.com.au',
+          onInput: (e) => { w.contactEmail = e.target.value.trim(); saveState(); } });
+        const inUse = !!State.wccs[code];
+        return h('tr', {}, [
+          h('td', { class: 'col-num mono' }, code),
+          h('td', {}, labelI),
+          h('td', {}, emailI),
+          h('td', { class: 'col-actions' }, [
+            h('button', { class: 'icon-btn danger', title: inUse ? 'In use by rounds — remove from index only' : 'Remove from index',
+              onClick: () => {
+                const doDelete = () => { delete reg[code]; saveState(); renderList(); };
+                if (inUse) confirmDelete(`WCC ${code} from the index (its rounds stay)`, doDelete);
+                else doDelete();
+              } }, '×'),
+          ]),
+        ]);
+      }) : [h('tr', {}, h('td', { colspan: 4, style: { color: 'var(--text-muted)', padding: '14px' } }, 'No WCCs yet — add one below.'))]),
+    ]);
+    listWrap.appendChild(table);
+  };
+  renderList();
+
+  let newCode, newLabel, newEmail;
+  const addRow = h('div', { class: 'addr-add-row' }, [
+    newCode = h('input', { class: 'input mono small', type: 'text', placeholder: 'WCC code (e.g. 281586)', maxlength: 6, style: { width: '160px' } }),
+    newLabel = h('input', { class: 'input small', type: 'text', placeholder: 'Label', onInput: (e) => { e.target.value = e.target.value.toUpperCase(); } }),
+    newEmail = h('input', { class: 'input small mono', type: 'email', placeholder: 'Contact email' }),
+    h('button', { class: 'tbtn primary', onClick: () => {
+      const code = newCode.value.trim();
+      if (!code) { toast('Enter a WCC code', 'warn'); return; }
+      if (reg[code]) { toast('That WCC already exists', 'warn'); return; }
+      registerWcc(code, newLabel.value.trim().toUpperCase(), newEmail.value.trim());
+      saveState();
+      newCode.value = newLabel.value = newEmail.value = '';
+      renderList();
+    } }, '+ Add'),
+  ]);
+
+  openModal(h('div', { class: 'modal wide' }, [
+    h('h2', {}, 'Manage WCCs'),
+    h('p', { class: 'subtle' }, 'Your local index of work-centre codes. The code is the identifier (read-only); label and email are editable and autofill the Round dialog.'),
+    listWrap,
+    addRow,
+    h('div', { class: 'modal-actions' }, [
+      h('button', { class: 'tbtn primary', onClick: () => { closeModal(); renderBrowse(); } }, 'Done'),
+    ]),
+  ]));
+}
+
+function openEditRoundModal(wccCode, roundNum) {
+  const r = State.wccs[wccCode].rounds[roundNum];
+  let labelInput, pdoNameInput, pdoApsInput;
+  const submit = () => {
+    const label = labelInput.value.trim().toUpperCase();
+    if (!label) { toast('Suburb label is required — e.g. "GIRALANG / KALEEN"', 'warn'); labelInput.focus(); return; }
+    r.label = label;
+    r.pdoName = pdoNameInput.value.trim().toUpperCase();
+    r.pdoAps = pdoApsInput.value.trim().replace(/\D/g, '');
+    saveState();
+    closeModal();
+    renderBrowse();
+  };
+  openModal(h('div', { class: 'modal' }, [
+    h('h2', {}, 'Edit round ' + roundNum),
+    h('p', { class: 'subtle' }, 'The suburb label describes which patch this round covers and is shown on the load-balance report.'),
+    h('div', { class: 'field' }, [
+      h('label', {}, 'Suburb(s) covered  · required'),
+      labelInput = h('input', { class: 'input', type: 'text', value: r.label || '', placeholder: 'e.g. GIRALANG / KALEEN',
+        onInput: (e) => { e.target.value = e.target.value.toUpperCase(); } }),
+    ]),
+    h('div', { class: 'form-row', style: { marginTop: '12px' } }, [
+      h('div', { class: 'field grow' }, [
+        h('label', {}, 'PDO name'),
+        pdoNameInput = h('input', { class: 'input', type: 'text', value: r.pdoName || '', placeholder: 'e.g. TAYLOR SMITH',
+          onInput: (e) => { e.target.value = e.target.value.toUpperCase(); } }),
+      ]),
+      h('div', { class: 'field' }, [
+        h('label', {}, 'APS number  · digits'),
+        pdoApsInput = h('input', { class: 'input mono', type: 'text', value: r.pdoAps || '', placeholder: '11280036',
+          inputmode: 'numeric',
+          style: { width: '160px' },
+          onInput: (e) => {
+            const pos = e.target.selectionStart;
+            const cleaned = e.target.value.replace(/\D/g, '');
+            if (cleaned !== e.target.value) {
+              e.target.value = cleaned;
+              try { e.target.setSelectionRange(pos, pos); } catch(_) {}
+            }
+          }
+        }),
+      ]),
+    ]),
+    h('div', { class: 'modal-actions' }, [
+      h('button', { class: 'tbtn ghost', onClick: closeModal }, 'Cancel'),
+      h('button', { class: 'tbtn primary', onClick: submit }, 'Save'),
+    ]),
+  ]));
+}
+
+function openEditSideModal(wccCode, roundNum, letter) {
+  const s = State.wccs[wccCode].rounds[roundNum].sides[letter];
+  let labelInput;
+  const submit = () => { s.label = labelInput.value.trim().toUpperCase(); saveState(); closeModal(); renderBrowse(); };
+  openModal(h('div', { class: 'modal' }, [
+    h('h2', {}, 'Edit side ' + letter),
+    h('p', { class: 'subtle' }, 'Add or override the side label. The default auto-increments from the round number.'),
+    h('div', { class: 'field' }, [
+      h('label', {}, 'Label'),
+      labelInput = h('input', { class: 'input mono', type: 'text', value: s.label || '', placeholder: 'e.g. 1121',
+        onInput: (e) => { e.target.value = e.target.value.toUpperCase(); } }),
+    ]),
+    h('div', { class: 'modal-actions' }, [
+      h('button', { class: 'tbtn ghost', onClick: closeModal }, 'Cancel'),
+      h('button', { class: 'tbtn primary', onClick: submit }, 'Save'),
+    ]),
+  ]));
+}
+
+function confirmDelete(what, onConfirm) {
+  openModal(h('div', { class: 'modal' }, [
+    h('h2', {}, 'Delete ' + what + '?'),
+    h('p', { class: 'subtle' }, 'This cannot be undone. Make sure you\'ve exported a backup if you might need it later.'),
+    h('div', { class: 'modal-actions' }, [
+      h('button', { class: 'tbtn ghost', onClick: closeModal }, 'Cancel'),
+      h('button', { class: 'tbtn danger', onClick: () => { onConfirm(); closeModal(); } }, 'Delete'),
+    ]),
+  ]));
+}
+
+function openCopyStripModal(strip, srcWcc, srcRnd, srcSide, srcSub) {
+  // Pick a section, then pick a destination
+  if (!strip.sections.length) { toast('No sections to copy', 'warn'); return; }
+  let selectedSectionId = strip.sections[0].id;
+  let destWcc, destRnd, destSide, destSub;
+
+  const sectionPicker = h('select', { class: 'select input', onChange: (e) => { selectedSectionId = e.target.value; } },
+    strip.sections.map(s => h('option', { value: s.id }, `${s.label || 'untitled'} — ${s.addresses.length} addr`))
+  );
+
+  // Build destination options
+  const allStrips = [];
+  for (const w of Object.values(State.wccs)) {
+    for (const r of Object.values(w.rounds)) {
+      for (const sd of Object.values(r.sides)) {
+        for (const su of Object.values(sd.subSides)) {
+          if (w.code === srcWcc && r.number === srcRnd && sd.letter === srcSide && su.number === srcSub) continue;
+          allStrips.push({ wcc: w.code, rnd: r.number, side: sd.letter, sub: su.number });
+        }
+      }
+    }
+  }
+
+  const destPicker = h('select', { class: 'select input', onChange: (e) => {
+    const [w, r, sd, su] = e.target.value.split('|');
+    destWcc = w; destRnd = r; destSide = sd; destSub = parseInt(su, 10);
+  } },
+    [h('option', { value: '' }, '— pick destination —')].concat(
+      allStrips.map(s => h('option', { value: `${s.wcc}|${s.rnd}|${s.side}|${s.sub}` }, `WCC ${s.wcc} / RND ${s.rnd} / ${s.side}${s.sub}`))
+    )
+  );
+
+  const submit = () => {
+    if (!destWcc) { toast('Pick a destination strip', 'warn'); return; }
+    const section = strip.sections.find(s => s.id === selectedSectionId);
+    if (!section) return;
+    const destStrip = ensureSubSide(destWcc, destRnd, destSide, destSub);
+    const copySectionNotches = sectionNotchCount(section);
+    if (stripNotchCount(destStrip) + copySectionNotches > MAX_NOTCHES) {
+      toast(`Destination ${destSide}${destSub} has ${stripNotchCount(destStrip)} notches; adding this section (${copySectionNotches}) would exceed the 60-notch limit.`, 'danger');
+      return;
+    }
+    const copy = JSON.parse(JSON.stringify(section));
+    copy.id = uid('sec');
+    copy.addresses.forEach(a => { a.id = uid('a'); a.units.forEach(u => u.id = uid('u')); });
+    destStrip.sections.push(copy);
+    saveState();
+    closeModal();
+    toast(`Copied to ${destSide}${destSub}`, 'good');
+  };
+
+  openModal(h('div', { class: 'modal wide' }, [
+    h('h2', {}, 'Copy section to another strip'),
+    h('p', { class: 'subtle' }, 'For rebalancing routes. The section (including all addresses and units) is duplicated to the destination — the source remains intact.'),
+    h('div', { class: 'form-row' }, [
+      h('div', { class: 'field grow' }, [
+        h('label', {}, 'Section'),
+        sectionPicker,
+      ]),
+      h('div', { class: 'field grow' }, [
+        h('label', {}, 'Destination'),
+        destPicker,
+      ]),
+    ]),
+    h('div', { class: 'modal-actions' }, [
+      h('button', { class: 'tbtn ghost', onClick: closeModal }, 'Cancel'),
+      h('button', { class: 'tbtn primary', onClick: submit }, 'Copy'),
+    ]),
+  ]));
+}
+
+// ============== EXPORT / IMPORT ==============
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(State, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,16).replace(/[:T]/g, '-');
+  a.href = url;
+  a.download = `stripmaker_${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+  toast('Exported JSON backup', 'good');
+}
+
+function importJSON(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!data.wccs || typeof data.wccs !== 'object') throw new Error('Not a valid Stripmaker JSON');
+      migrate(data); // ensure new v0.2 fields exist before merge/replace
+      openModal(h('div', { class: 'modal' }, [
+        h('h2', {}, 'Import database'),
+        h('p', { class: 'subtle' }, 'How would you like to import? Replace wipes your current data; merge appends sections.'),
+        h('div', { class: 'modal-actions' }, [
+          h('button', { class: 'tbtn ghost', onClick: closeModal }, 'Cancel'),
+          h('button', { class: 'tbtn', onClick: () => { mergeImport(data); closeModal(); } }, 'Merge'),
+          h('button', { class: 'tbtn danger', onClick: () => { State = data; saveState(); closeModal(); renderBrowse(); toast('Replaced from file', 'good'); } }, 'Replace'),
+        ]),
+      ]));
+    } catch (e) {
+      toast('Bad file: ' + e.message, 'danger');
+    }
+  };
+  reader.readAsText(file);
+}
+function mergeImport(data) {
+  // Merge the WCC registry first so labels/emails are available.
+  for (const [code, w] of Object.entries(data.wccRegistry || {})) {
+    registerWcc(code, w.label || '', w.contactEmail || '');
+  }
+  for (const [code, wcc] of Object.entries(data.wccs || {})) {
+    const dest = ensureWcc(code);
+    if (wcc.label) dest.label = wcc.label;
+    if (wcc.contactEmail) dest.contactEmail = wcc.contactEmail;
+    for (const [rn, r] of Object.entries(wcc.rounds || {})) {
+      const dr = ensureRound(code, rn);
+      if (r.label) dr.label = r.label;
+      if (r.pdoName) dr.pdoName = r.pdoName;
+      if (r.pdoAps)  dr.pdoAps  = r.pdoAps;
+      for (const [letter, side] of Object.entries(r.sides || {})) {
+        const ds = ensureSide(code, rn, letter);
+        if (side.label) ds.label = side.label;
+        for (const [k, sub] of Object.entries(side.subSides || {})) {
+          const dsub = ensureSubSide(code, rn, letter, parseInt(k, 10));
+          // Append sections rather than overwrite (safer for merges)
+          for (const sec of sub.sections || []) {
+            const copy = JSON.parse(JSON.stringify(sec));
+            copy.id = uid('sec');
+            (copy.addresses || []).forEach(a => {
+              a.id = uid('a');
+              if (a.noJunkMail === undefined) a.noJunkMail = false;
+              if (a.isCommercial === undefined) a.isCommercial = false;
+              (a.units || []).forEach(u => u.id = uid('u'));
+            });
+            dsub.sections.push(copy);
+          }
+        }
+      }
+    }
+  }
+  saveState();
+  renderBrowse();
+  toast('Merged from file', 'good');
+}
+
+// ============== PRINT ==============
+// Dynamic page-size injection so we can support different paper sizes
+// (920mm × 23mm for strips — fits the 60-notch cap (60 × 14.5mm) plus the
+// 29mm round-end marker, which is allowed to overhang the physical strip
+// holder — and A4 portrait for reports) from one app.
+function printWithPageSize(sizeRule, mode, marginCss) {
+  // Remove any prior dynamic style
+  const existing = document.getElementById('dynamic-page-style');
+  if (existing) existing.remove();
+  const style = document.createElement('style');
+  style.id = 'dynamic-page-style';
+  const margin = marginCss != null ? marginCss : (mode === 'report' ? '15mm' : '0');
+  style.textContent = `@page { ${sizeRule} margin: ${margin}; }`;
+  document.head.appendChild(style);
+  document.body.setAttribute('data-printing', mode);
+  // Give the layout a tick before firing the print dialog
+  setTimeout(() => window.print(), 60);
+}
+
+const NOTCH_MM = 14.5;      // physical notch width
+const ROW_BLOCK_MM = 22;    // vertical space one strip row consumes (21mm strip + cut line)
+const PRINT_MARGIN_MM = 8;  // page margin used for tiling maths
+const END_MARKER_MM = 29;   // round-end marker width
+
+const PAPER_SIZES = {
+  A4: { w: 210, h: 297 },
+  A3: { w: 297, h: 420 },
+};
+
+// Flatten the whole strip into a single sequence of {sec, cell} notches so we
+// can re-chunk it into page-width rows regardless of section boundaries.
+function buildStripCells(strip) {
+  const flat = [];
+  for (const sec of strip.sections) {
+    for (const cell of layoutSection(sec)) flat.push({ sec, cell });
+  }
+  return flat;
+}
+
+// Render one page-width row from a list of {sec, cell}, grouping consecutive
+// cells of the same section so colour + label render correctly.
+function renderRowStrip(items, endMarker) {
+  const stripEl = h('div', { class: 'strip' });
+  let i = 0;
+  while (i < items.length) {
+    const sec = items[i].sec;
+    const group = [];
+    while (i < items.length && items[i].sec === sec) { group.push(items[i].cell); i++; }
+    const txt = getTextColor(sec);
+    const notchCount = group.reduce((s, c) => s + (c.width || 1), 0);
+    const numRow = h('div', { class: 'num-row' });
+    for (const c of group) numRow.appendChild(renderCellDOM(c, txt));
+    const labelRow = h('div', { class: 'label-row' }, [h('span', { class: 'label-text' }, sec.label || ' ')]);
+    stripEl.appendChild(h('div', {
+      class: 'strip-section',
+      style: { background: sec.color, color: txt, width: `calc(var(--notch-w) * ${notchCount})`, flex: `0 0 calc(var(--notch-w) * ${notchCount})` },
+    }, [numRow, labelRow]));
+  }
+  if (endMarker) {
+    stripEl.appendChild(h('div', { class: 'strip-end' }, [
+      h('div', { class: 'rnd' }, endMarker.rnd),
+      h('div', { class: 'id' }, endMarker.id),
+    ]));
+  }
+  // 10mm blank tail at the end of every piece, for overlap on install.
+  stripEl.appendChild(h('div', { class: 'tile-end-pad' }));
+  return stripEl;
+}
+
+// Continuous single-strip print (original behaviour): one 920mm-wide page.
+function printContinuous(strip, stripIdLabel, roundNum) {
+  const root = $('#print-root');
+  root.innerHTML = '';
+  const printStripEl = h('div', { class: 'strip' });
+  for (const sec of strip.sections) printStripEl.appendChild(renderSectionDOM(sec, false));
+  printStripEl.appendChild(h('div', { class: 'strip-end' }, [
+    h('div', { class: 'rnd' }, 'RND_' + roundNum),
+    h('div', { class: 'id' }, stripIdLabel),
+  ]));
+  printStripEl.appendChild(h('div', { class: 'tile-end-pad' })); // 10mm install tail
+  root.appendChild(printStripEl);
+  printWithPageSize('size: 930mm 23mm;', 'strip');
+}
+
+// Build the A4/A3 sheets for one strip: break it into page-width rows stacked
+// tightly down each sheet (separated by a black cut line). Returns an array of
+// .strip-sheet elements (each is one printed page).
+function buildTiledSheets(strip, stripIdLabel, roundNum, paper, orientation) {
+  const dims = PAPER_SIZES[paper] || PAPER_SIZES.A4;
+  const pageW = orientation === 'landscape' ? dims.h : dims.w;
+  const pageH = orientation === 'landscape' ? dims.w : dims.h;
+  const usableW = pageW - 2 * PRINT_MARGIN_MM;
+  const usableH = pageH - 2 * PRINT_MARGIN_MM;
+  // Reserve the 10mm end tail so a row never exceeds the printable width.
+  const notchesPerRow = Math.max(1, Math.floor((usableW - 10) / NOTCH_MM));
+  const rowsPerPage = Math.max(1, Math.floor(usableH / ROW_BLOCK_MM));
+
+  const flat = buildStripCells(strip);
+  const rows = [];
+  let cur = [], curN = 0;
+  for (const it of flat) {
+    const w = it.cell.width || 1;
+    if (curN + w > notchesPerRow && cur.length) { rows.push(cur); cur = []; curN = 0; }
+    cur.push(it); curN += w;
+  }
+  if (cur.length) rows.push(cur);
+  if (!rows.length) rows.push([]); // always emit at least one (for the end marker)
+
+  // The last piece also carries the round-end marker (~2 notches) plus the 10mm
+  // tail (~1 notch). If the final row is too full to fit them, give the marker
+  // its own final row so nothing clips.
+  const lastCount = rows[rows.length - 1].reduce((s, it) => s + (it.cell.width || 1), 0);
+  if (lastCount + 3 > notchesPerRow) rows.push([]);
+
+  const totalRows = rows.length;
+  const sheets = [];
+  let sheet = h('div', { class: 'strip-sheet' });
+  rows.forEach((rowItems, idx) => {
+    if (idx > 0 && idx % rowsPerPage === 0) {
+      sheets.push(sheet);
+      sheet = h('div', { class: 'strip-sheet' });
+    }
+    const isLast = idx === totalRows - 1;
+    const endMarker = isLast ? { rnd: 'RND_' + roundNum, id: stripIdLabel } : null;
+    sheet.appendChild(h('div', { class: 'tile-row' }, [renderRowStrip(rowItems, endMarker)]));
+  });
+  sheets.push(sheet);
+  return sheets;
+}
+
+// Tiled print of a single strip.
+function printTiled(strip, stripIdLabel, roundNum, paper, orientation) {
+  const root = $('#print-root');
+  root.innerHTML = '';
+  for (const sheet of buildTiledSheets(strip, stripIdLabel, roundNum, paper, orientation)) {
+    root.appendChild(sheet);
+  }
+  printWithPageSize(`size: ${paper} ${orientation};`, 'strip', PRINT_MARGIN_MM + 'mm');
+}
+
+// Print options chooser.
+function openPrintModal(strip, stripIdLabel, roundNum) {
+  let paper = 'A4';
+  let orientation = 'landscape';
+  let mode = 'tiled'; // 'tiled' | 'continuous'
+
+  const orientToggle = h('div', { class: 'toggle-group' }, [
+    h('button', { class: 'active', onClick: (e) => setOrient('landscape', e) }, 'Landscape'),
+    h('button', { onClick: (e) => setOrient('portrait', e) }, 'Portrait'),
+  ]);
+  function setOrient(o, e) {
+    orientation = o;
+    Array.from(orientToggle.children).forEach(b => b.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    updateHint();
+  }
+
+  const paperToggle = h('div', { class: 'toggle-group' }, [
+    h('button', { class: 'active', onClick: (e) => setPaper('A4', e) }, 'A4'),
+    h('button', { onClick: (e) => setPaper('A3', e) }, 'A3'),
+  ]);
+  function setPaper(p, e) {
+    paper = p;
+    Array.from(paperToggle.children).forEach(b => b.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    updateHint();
+  }
+
+  const modeToggle = h('div', { class: 'toggle-group' }, [
+    h('button', { class: 'active', onClick: (e) => setMode('tiled', e) }, 'Cut sections (A4/A3)'),
+    h('button', { onClick: (e) => setMode('continuous', e) }, 'Continuous (920mm)'),
+  ]);
+  function setMode(m, e) {
+    mode = m;
+    Array.from(modeToggle.children).forEach(b => b.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    paperToggle.style.opacity = orientToggle.style.opacity = (m === 'tiled') ? '1' : '0.4';
+    paperToggle.style.pointerEvents = orientToggle.style.pointerEvents = (m === 'tiled') ? 'auto' : 'none';
+    updateHint();
+  }
+
+  const hint = h('p', { class: 'subtle', style: { marginTop: '10px' } }, '');
+  function updateHint() {
+    if (mode === 'continuous') {
+      hint.textContent = 'Prints one continuous 920mm-wide strip — needs a wide-format / roll printer.';
+      return;
+    }
+    const dims = PAPER_SIZES[paper];
+    const pageW = orientation === 'landscape' ? dims.h : dims.w;
+    const pageH = orientation === 'landscape' ? dims.w : dims.h;
+    const perRow = Math.max(1, Math.floor((pageW - 2 * PRINT_MARGIN_MM - 10) / NOTCH_MM));
+    const perPage = Math.max(1, Math.floor((pageH - 2 * PRINT_MARGIN_MM) / ROW_BLOCK_MM));
+    const total = stripNotchCount(strip);
+    const pieces = Math.max(1, Math.ceil(total / perRow));
+    const sheets = Math.max(1, Math.ceil(pieces / perPage));
+    hint.textContent = `${paper} ${orientation}: ~${perRow} notches per piece, ${perPage} pieces per sheet. ${total} notches → ${pieces} pieces on ${sheets} sheet${sheets === 1 ? '' : 's'}. Cut along the dashed lines and lay the pieces end-to-end.`;
+  }
+  updateHint();
+
+  const go = () => {
+    closeModal();
+    setTimeout(() => {
+      if (mode === 'continuous') printContinuous(strip, stripIdLabel, roundNum);
+      else printTiled(strip, stripIdLabel, roundNum, paper, orientation);
+    }, 30);
+  };
+
+  openModal(h('div', { class: 'modal' }, [
+    h('h2', {}, 'Print strip'),
+    h('p', { class: 'subtle' }, 'Cut-section printing tiles the strip across ordinary A4/A3 sheets so it works on small printers and wastes less paper.'),
+    h('div', { class: 'field', style: { marginBottom: '12px' } }, [h('label', {}, 'Layout'), modeToggle]),
+    h('div', { class: 'form-row' }, [
+      h('div', { class: 'field' }, [h('label', {}, 'Paper'), paperToggle]),
+      h('div', { class: 'field' }, [h('label', {}, 'Orientation'), orientToggle]),
+    ]),
+    hint,
+    h('div', { class: 'modal-actions' }, [
+      h('button', { class: 'tbtn ghost', onClick: closeModal }, 'Cancel'),
+      h('button', { class: 'tbtn primary', onClick: go }, '⎙ Print'),
+    ]),
+  ]));
+}
+
+// Collect every strip (sub-side) under a scope, in delivery order.
+// scope: 'wcc' | 'round' | 'side'
+function collectStrips(scope, wccCode, roundNum, sideLetter) {
+  const out = [];
+  const w = State.wccs[wccCode];
+  if (!w) return out;
+  const rounds = scope === 'wcc'
+    ? Object.keys(w.rounds).sort()
+    : [roundNum];
+  for (const rn of rounds) {
+    const r = w.rounds[rn];
+    if (!r) continue;
+    const sides = (scope === 'side') ? [sideLetter] : ['A', 'B', 'C', 'D'].filter(l => r.sides[l]);
+    for (const sl of sides) {
+      const side = r.sides[sl];
+      if (!side) continue;
+      const subs = Object.keys(side.subSides).map(Number).filter(n => !isNaN(n)).sort((a, b) => a - b);
+      for (const sn of subs) {
+        const strip = side.subSides[String(sn)];
+        out.push({ strip, label: sl + sn, round: rn });
+      }
+    }
+  }
+  return out;
+}
+
+// Bulk-print every strip in a scope as one tiled document (each strip starts on
+// a fresh sheet). Empty strips are skipped.
+function printBulk(strips, paper, orientation) {
+  const root = $('#print-root');
+  root.innerHTML = '';
+  let printed = 0;
+  for (const { strip, label, round } of strips) {
+    if (!strip.sections || !strip.sections.length) continue;
+    for (const sheet of buildTiledSheets(strip, label, round, paper, orientation)) {
+      root.appendChild(sheet);
+    }
+    printed++;
+  }
+  if (!printed) { toast('No strips with content in that selection', 'warn'); return; }
+  printWithPageSize(`size: ${paper} ${orientation};`, 'strip', PRINT_MARGIN_MM + 'mm');
+}
+
+// Advanced print: choose a scope (whole WCC / one round / one side) and bulk
+// print all its strips as cut sections.
+function openAdvancedPrintModal() {
+  const wccCodes = Object.keys(State.wccs).sort();
+  if (!wccCodes.length) { toast('No WCCs with data to print', 'warn'); return; }
+
+  let scope = 'round';
+  let wccCode = wccCodes[0];
+  let roundNum = null, sideLetter = null;
+  let paper = 'A4', orientation = 'landscape';
+
+  const roundSel = h('select', { class: 'select input' });
+  const sideSel = h('select', { class: 'select input' });
+  const sideField = h('div', { class: 'field grow' }, [h('label', {}, 'Side'), sideSel]);
+  const roundField = h('div', { class: 'field grow' }, [h('label', {}, 'Round'), roundSel]);
+  const hint = h('p', { class: 'subtle', style: { marginTop: '8px' } }, '');
+
+  const fillRounds = () => {
+    const w = State.wccs[wccCode];
+    const rns = Object.keys(w.rounds).sort();
+    roundSel.innerHTML = '';
+    rns.forEach(rn => roundSel.appendChild(h('option', { value: rn }, 'RND ' + rn)));
+    roundNum = rns[0] || null;
+    roundSel.value = roundNum || '';
+  };
+  const fillSides = () => {
+    const r = State.wccs[wccCode]?.rounds?.[roundNum];
+    sideSel.innerHTML = '';
+    const letters = r ? ['A', 'B', 'C', 'D'].filter(l => r.sides[l]) : [];
+    letters.forEach(l => sideSel.appendChild(h('option', { value: l }, 'Side ' + l)));
+    sideLetter = letters[0] || null;
+    sideSel.value = sideLetter || '';
+  };
+  const updateVisibility = () => {
+    roundField.style.display = (scope === 'wcc') ? 'none' : '';
+    sideField.style.display = (scope === 'side') ? '' : 'none';
+  };
+  const updateHint = () => {
+    const strips = collectStrips(scope, wccCode, roundNum, sideLetter)
+      .filter(s => s.strip.sections && s.strip.sections.length);
+    const labels = strips.map(s => s.label);
+    hint.textContent = strips.length
+      ? `${strips.length} strip${strips.length === 1 ? '' : 's'} will print: ${labels.join(', ')}.`
+      : 'No strips with content in this selection.';
+  };
+  const refresh = () => { updateVisibility(); updateHint(); };
+
+  const wccSel = h('select', { class: 'select input', onChange: (e) => { wccCode = e.target.value; fillRounds(); fillSides(); refresh(); } },
+    wccCodes.map(c => h('option', { value: c }, 'WCC ' + c + (State.wccs[c].label ? ' — ' + State.wccs[c].label : ''))));
+  roundSel.onchange = (e) => { roundNum = e.target.value; fillSides(); refresh(); };
+  sideSel.onchange = (e) => { sideLetter = e.target.value; refresh(); };
+
+  const scopeToggle = h('div', { class: 'toggle-group' }, [
+    h('button', { onClick: (e) => setScope('wcc', e) }, 'Whole WCC'),
+    h('button', { class: 'active', onClick: (e) => setScope('round', e) }, 'One round'),
+    h('button', { onClick: (e) => setScope('side', e) }, 'One side'),
+  ]);
+  function setScope(s, e) {
+    scope = s;
+    Array.from(scopeToggle.children).forEach(b => b.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    refresh();
+  }
+
+  const paperToggle = h('div', { class: 'toggle-group' }, [
+    h('button', { class: 'active', onClick: (e) => { paper = 'A4'; mark(paperToggle, e); } }, 'A4'),
+    h('button', { onClick: (e) => { paper = 'A3'; mark(paperToggle, e); } }, 'A3'),
+  ]);
+  const orientToggle = h('div', { class: 'toggle-group' }, [
+    h('button', { class: 'active', onClick: (e) => { orientation = 'landscape'; mark(orientToggle, e); } }, 'Landscape'),
+    h('button', { onClick: (e) => { orientation = 'portrait'; mark(orientToggle, e); } }, 'Portrait'),
+  ]);
+  function mark(group, e) {
+    Array.from(group.children).forEach(b => b.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+  }
+
+  fillRounds(); fillSides(); refresh();
+
+  const go = () => {
+    const strips = collectStrips(scope, wccCode, roundNum, sideLetter);
+    closeModal();
+    setTimeout(() => printBulk(strips, paper, orientation), 30);
+  };
+
+  openModal(h('div', { class: 'modal' }, [
+    h('h2', {}, 'Advanced print'),
+    h('p', { class: 'subtle' }, 'Bulk-print cut-section strips for a whole WCC, a single round, or one side. Each strip starts on a fresh sheet.'),
+    h('div', { class: 'field', style: { marginBottom: '12px' } }, [h('label', {}, 'Scope'), scopeToggle]),
+    h('div', { class: 'form-row' }, [
+      h('div', { class: 'field grow' }, [h('label', {}, 'WCC'), wccSel]),
+      roundField,
+      sideField,
+    ]),
+    h('div', { class: 'form-row' }, [
+      h('div', { class: 'field' }, [h('label', {}, 'Paper'), paperToggle]),
+      h('div', { class: 'field' }, [h('label', {}, 'Orientation'), orientToggle]),
+    ]),
+    hint,
+    h('div', { class: 'modal-actions' }, [
+      h('button', { class: 'tbtn ghost', onClick: closeModal }, 'Cancel'),
+      h('button', { class: 'tbtn primary', onClick: go }, '⎙ Print all'),
+    ]),
+  ]));
+}
+
+// ============== REPORT (load-balance) ==============
+
+// Walk the round and produce per-side and per-sub-side counts.
+//
+// Flag accounting (v0.3, with per-unit flags):
+//   • Non-unit address contributes 1 mail piece. It's commercial iff
+//     a.isCommercial; gets junk mail iff !a.noJunkMail.
+//   • Apartment address (with units) contributes N mail pieces, one per unit.
+//     Each unit is commercial iff (a.isCommercial OR u.isCommercial), and
+//     gets junk mail iff !(a.noJunkMail OR u.noJunkMail).  (Address-level
+//     flags act as an inherited default; unit-level flags can opt in/out.)
+//   • commercialAddresses = count of addresses with at least one commercial
+//     piece (useful for the "how many businesses on the round" view).
+function computeRoundStats(round) {
+  const result = { sides: {}, sideLetters: [] };
+  for (const letter of ['A', 'B', 'C', 'D']) {
+    const side = round.sides[letter];
+    if (!side) continue;
+    result.sideLetters.push(letter);
+    let addresses = 0, units = 0, apartmentBlocks = 0;
+    let commercialAddresses = 0, commercialPieces = 0;
+    let junkMailPieces = 0;
+    let effectiveStops = 0;
+    const subStats = {};
+    const subNums = Object.keys(side.subSides).map(Number).sort((a,b)=>a-b);
+    for (const sn of subNums) {
+      const sub = side.subSides[String(sn)];
+      let sAddr = 0, sUnits = 0, sBlocks = 0;
+      let sComAddr = 0, sComPieces = 0;
+      let sJM = 0, sEff = 0;
+      for (const sec of sub.sections) {
+        for (const a of sec.addresses) {
+          sAddr++;
+          sEff++; // one physical stop per address (apt block reached at one location)
+          // Every sub-cell is a real delivery — including a "blank" cell, which
+          // represents the house at the plain number (e.g. "4" alongside "4A").
+          const hasUnits = a.units && a.units.length > 0;
+          if (hasUnits) {
+            sUnits += a.units.length;
+            sBlocks++;
+            let anyComOnThisAddr = false;
+            for (const u of a.units) {
+              const isCom = a.isCommercial || u.isCommercial;
+              const noJM = a.noJunkMail   || u.noJunkMail;
+              if (isCom) { sComPieces++; anyComOnThisAddr = true; }
+              if (!noJM) sJM++;
+            }
+            if (anyComOnThisAddr) sComAddr++;
+          } else {
+            // Single non-unit address = 1 mail piece
+            if (a.isCommercial) { sComPieces++; sComAddr++; }
+            if (!a.noJunkMail)  sJM++;
+          }
+        }
+      }
+      subStats[sn] = {
+        n: sn,
+        addresses: sAddr, units: sUnits, apartmentBlocks: sBlocks,
+        commercialAddresses: sComAddr, commercialPieces: sComPieces,
+        junkMail: sJM, effectiveStops: sEff,
+        sectionCount: sub.sections.length,
+      };
+      addresses += sAddr;
+      units += sUnits;
+      apartmentBlocks += sBlocks;
+      commercialAddresses += sComAddr;
+      commercialPieces += sComPieces;
+      junkMailPieces += sJM;
+      effectiveStops += sEff;
+    }
+    result.sides[letter] = {
+      letter, label: side.label || '',
+      addresses, units, apartmentBlocks,
+      commercialAddresses, commercialPieces, commercial: commercialAddresses,
+      junkMail: junkMailPieces,
+      effectiveStops,
+      // Mail pieces = one per non-unit address + one per unit at apt blocks
+      mailPieces: addresses - apartmentBlocks + units,
+      subStats,
+    };
+  }
+  return result;
+}
+
+function fmtDelta(a, b) {
+  const d = a - b;
+  if (d === 0) return { text: '—', cls: 'even' };
+  const cls = Math.abs(d) >= Math.max(5, Math.round(Math.max(a,b) * 0.15)) ? 'high' : '';
+  return { text: (d > 0 ? '+' : '') + d, cls };
+}
+
+function buildReportDom(wcc, round) {
+  const stats = computeRoundStats(round);
+  const sides = stats.sideLetters.map(l => stats.sides[l]);
+  const isPair = sides.length === 2; // Most common case: A vs B
+  const dateStr = new Date().toLocaleString('en-AU', {
+    year: 'numeric', month: 'short', day: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  });
+
+  // Header / metadata
+  const metaRows = [
+    h('div', { class: 'row' }, [h('span', { class: 'k' }, 'WCC'), h('span', { class: 'v' }, wcc.code + (wcc.label ? ' · ' + wcc.label : ''))]),
+    h('div', { class: 'row' }, [h('span', { class: 'k' }, 'Round'), h('span', { class: 'v' }, round.number + (round.label ? ' · ' + round.label : ''))]),
+  ];
+  if (wcc.contactEmail) {
+    metaRows.push(h('div', { class: 'row' }, [
+      h('span', { class: 'k' }, 'WCC Contact'),
+      h('a', { class: 'v', href: 'mailto:' + wcc.contactEmail, style: { textTransform: 'none', color: '#1f1d17', textDecoration: 'underline' } }, wcc.contactEmail),
+    ]));
+  }
+  if (round.pdoName || round.pdoAps) {
+    metaRows.push(h('div', { class: 'row' }, [h('span', { class: 'k' }, 'PDO'), h('span', { class: 'v' }, [round.pdoName, round.pdoAps].filter(Boolean).join(' · '))]));
+  }
+  metaRows.push(h('div', { class: 'row' }, [h('span', { class: 'k' }, 'Generated'), h('span', { class: 'v', style: { textTransform: 'none' } }, dateStr)]));
+  metaRows.push(h('div', { class: 'row' }, [h('span', { class: 'k' }, 'Sides'), h('span', { class: 'v' }, sides.map(s => s.letter + (s.label ? ' (' + s.label + ')' : '')).join(', '))]));
+
+  // Top-line balance cards (only meaningful when there are 2 sides — the typical A/B day pair)
+  let balanceBlock = null;
+  if (isPair) {
+    const a = sides[0], b = sides[1];
+    const totalA = a.effectiveStops, totalB = b.effectiveStops;
+    const diff = totalA - totalB;
+    const pctDiff = Math.max(totalA, totalB) === 0 ? 0 : Math.round((Math.abs(diff) / Math.max(totalA, totalB)) * 100);
+    balanceBlock = h('div', { class: 'report-balance' }, [
+      h('div', { class: 'card' }, [
+        h('div', { class: 'label' }, `Side ${a.letter}${a.label ? ' · ' + a.label : ''}`),
+        h('div', { class: 'value' }, String(totalA)),
+        h('div', { class: 'sub' }, `${a.mailPieces} mail pieces · ${a.apartmentBlocks} apt block${a.apartmentBlocks===1?'':'s'}`),
+      ]),
+      h('div', { class: 'card' }, [
+        h('div', { class: 'label' }, `Side ${b.letter}${b.label ? ' · ' + b.label : ''}`),
+        h('div', { class: 'value' }, String(totalB)),
+        h('div', { class: 'sub' }, `${b.mailPieces} mail pieces · ${b.apartmentBlocks} apt block${b.apartmentBlocks===1?'':'s'}`),
+      ]),
+      h('div', { class: 'card' }, [
+        h('div', { class: 'label' }, 'Load Δ (A − B)'),
+        h('div', { class: 'value' }, (diff > 0 ? '+' : '') + String(diff)),
+        h('div', { class: 'sub' }, pctDiff + '% imbalance'),
+      ]),
+    ]);
+  }
+
+  // Side comparison table
+  const compareRows = [];
+  const metrics = [
+    { key: 'addresses', label: 'Total addresses (stops on strip)' },
+    { key: 'apartmentBlocks', label: 'Apartment blocks (≥1 unit)' },
+    { key: 'units', label: 'Total apartment units' },
+    { key: 'mailPieces', label: 'Estimated mail pieces (1 per non-apt addr + 1 per unit)' },
+    { key: 'commercialAddresses', label: 'Commercial addresses' },
+    { key: 'commercialPieces', label: 'Commercial mail pieces (incl. per-unit)' },
+    { key: 'junkMail', label: 'Junk-mail pieces (per-unit aware)' },
+    { key: 'effectiveStops', label: 'Effective stops (apt block = 1)' },
+  ];
+  for (const m of metrics) {
+    const cells = [h('td', {}, m.label)];
+    for (const s of sides) cells.push(h('td', { class: 'num' }, String(s[m.key] ?? 0)));
+    if (isPair) {
+      const d = fmtDelta(sides[0][m.key] ?? 0, sides[1][m.key] ?? 0);
+      cells.push(h('td', { class: 'delta ' + d.cls }, d.text));
+    }
+    compareRows.push(h('tr', {}, cells));
+  }
+  const compareHeader = [h('th', {}, 'Metric')];
+  for (const s of sides) compareHeader.push(h('th', { style: { textAlign: 'right' } }, `Side ${s.letter}${s.label ? ' (' + s.label + ')' : ''}`));
+  if (isPair) compareHeader.push(h('th', { style: { textAlign: 'right' } }, 'Δ (A − B)'));
+
+  const compareTable = h('table', { class: 'report-table' }, [
+    h('thead', {}, h('tr', {}, compareHeader)),
+    h('tbody', {}, compareRows),
+  ]);
+
+  // Per-sub-side breakdown
+  const subRows = [];
+  for (const s of sides) {
+    const subNums = Object.keys(s.subStats).map(Number).sort((a,b)=>a-b);
+    for (const sn of subNums) {
+      const ss = s.subStats[sn];
+      subRows.push(h('tr', {}, [
+        h('td', {}, `${s.letter}${sn}${s.label ? ' (' + s.label + ')' : ''}`),
+        h('td', { class: 'num' }, String(ss.sectionCount)),
+        h('td', { class: 'num' }, String(ss.addresses)),
+        h('td', { class: 'num' }, String(ss.apartmentBlocks)),
+        h('td', { class: 'num' }, String(ss.units)),
+        h('td', { class: 'num' }, String(ss.commercialPieces)),
+        h('td', { class: 'num' }, String(ss.junkMail)),
+      ]));
+    }
+    // Side total row
+    subRows.push(h('tr', { class: 'total' }, [
+      h('td', {}, `Side ${s.letter} total`),
+      h('td', { class: 'num' }, String(s.subStats ? Object.values(s.subStats).reduce((a,ss)=>a+ss.sectionCount,0) : 0)),
+      h('td', { class: 'num' }, String(s.addresses)),
+      h('td', { class: 'num' }, String(s.apartmentBlocks)),
+      h('td', { class: 'num' }, String(s.units)),
+      h('td', { class: 'num' }, String(s.commercialPieces)),
+      h('td', { class: 'num' }, String(s.junkMail)),
+    ]));
+  }
+  const subTable = h('table', { class: 'report-table' }, [
+    h('thead', {}, h('tr', {}, [
+      h('th', {}, 'Strip'),
+      h('th', { style: { textAlign: 'right' } }, 'Sections'),
+      h('th', { style: { textAlign: 'right' } }, 'Addresses'),
+      h('th', { style: { textAlign: 'right' } }, 'Apt blocks'),
+      h('th', { style: { textAlign: 'right' } }, 'Apt units'),
+      h('th', { style: { textAlign: 'right' } }, 'Commercial pieces'),
+      h('th', { style: { textAlign: 'right' } }, 'Junk mail'),
+    ])),
+    h('tbody', {}, subRows),
+  ]);
+
+  return h('div', { class: 'report-page' }, [
+    h('h1', { class: 'report-h1' }, `Load-Balance Report — RND ${round.number}`),
+    h('p', { class: 'report-sub' }, `WCC ${wcc.code}${wcc.label ? ' · ' + wcc.label : ''}`),
+
+    h('div', { class: 'report-meta' }, metaRows),
+
+    balanceBlock ? h('div', { class: 'report-section-title' }, 'Side balance snapshot') : null,
+    balanceBlock,
+
+    h('div', { class: 'report-section-title' }, 'Side comparison'),
+    compareTable,
+
+    h('div', { class: 'report-section-title' }, 'Per-strip breakdown'),
+    subTable,
+
+    h('p', { class: 'report-footnote' }, [
+      'Notes: "Apartment blocks" counts each address with one or more units (a single building stop). ',
+      '"Mail pieces" estimates physical mail = 1 per non-apt address + 1 per apartment unit. ',
+      '"Effective stops" treats each apartment block as one physical stop, since all units are reached at one location — useful for comparing driving/walking effort vs raw mail volume. ',
+      '"Commercial pieces" and "Junk mail" both account for per-unit flags: a unit inherits its address\'s flags by default, and can override them.',
+    ]),
+  ]);
+}
+
+function openReportModal(wcc, round) {
+  const reportEl = buildReportDom(wcc, round);
+  const modal = h('div', { class: 'modal wide report-modal' }, [
+    h('div', { class: 'report-modal-head' }, [
+      h('h2', {}, `Report · WCC ${wcc.code} · RND ${round.number}`),
+      h('div', { style: { display: 'flex', gap: '8px' } }, [
+        h('button', { class: 'tbtn ghost', onClick: closeModal }, 'Close'),
+        h('button', { class: 'tbtn primary', onClick: () => printReport(wcc, round) }, '⎙ Print to PDF'),
+      ]),
+    ]),
+    h('div', { class: 'report-preview-scroll' }, reportEl),
+  ]);
+  openModal(modal);
+}
+
+function printReport(wcc, round) {
+  const root = $('#report-root');
+  root.innerHTML = '';
+  root.appendChild(buildReportDom(wcc, round));
+  printWithPageSize('size: A4 portrait;', 'report');
+}
+
+// ============== CHANGELOG ==============
+function openChangelogModal() {
+  const timeline = h('div', { class: 'timeline' },
+    CHANGELOG.map((entry, i) => h('div', { class: 'tl-entry' + (i === 0 ? ' latest' : '') }, [
+      h('div', { class: 'tl-head' }, [
+        h('span', { class: 'tl-ver' }, 'v' + entry.version),
+        h('span', { class: 'tl-date' }, entry.date),
+        i === 0 ? h('span', { class: 'tl-tag' }, 'Latest') : null,
+      ]),
+      h('ul', { class: 'tl-list' }, entry.notes.map(n => h('li', {}, n))),
+    ]))
+  );
+  openModal(h('div', { class: 'modal wide' }, [
+    h('h2', {}, 'What\'s new'),
+    h('p', { class: 'subtle' }, 'Release history — most recent first.'),
+    h('div', { class: 'changelog-scroll' }, timeline),
+    h('div', { class: 'modal-actions' }, [
+      h('button', { class: 'tbtn primary', onClick: closeModal }, 'Close'),
+    ]),
+  ]));
+}
+
+// ============== NAV ==============
+function openEditor(wcc, rnd, side, sub) {
+  UI.view = 'editor';
+  UI.editor.wccCode = wcc;
+  UI.editor.roundNum = rnd;
+  UI.editor.sideLetter = side;
+  UI.editor.subNum = sub;
+  UI.editor.selectedSectionId = null;
+  ensureSubSide(wcc, rnd, side, sub);
+  saveState();
+  renderEditor();
+}
+
+function backToBrowse() {
+  UI.view = 'browse';
+  renderBrowse();
+}
+
+// ============== INIT ==============
+function init() {
+  // Home button + brand both return to the library / dashboard.
+  $('#btn-browse').addEventListener('click', backToBrowse);
+  $('#btn-home-brand').addEventListener('click', backToBrowse);
+
+  // Top-right kebab menu
+  const menu = $('#menu-dropdown');
+  const menuBtn = $('#btn-menu');
+  const closeMenu = () => { menu.hidden = true; menuBtn.setAttribute('aria-expanded', 'false'); };
+  const toggleMenu = () => {
+    const willOpen = menu.hidden;
+    menu.hidden = !willOpen;
+    menuBtn.setAttribute('aria-expanded', String(willOpen));
+  };
+  menuBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(); });
+  document.addEventListener('click', (e) => {
+    if (!menu.hidden && !menu.contains(e.target) && e.target !== menuBtn) closeMenu();
+  });
+  $('#mi-export').addEventListener('click', () => { closeMenu(); exportJSON(); });
+  $('#mi-import').addEventListener('click', () => { closeMenu(); $('#file-import').click(); });
+  $('#mi-advprint').addEventListener('click', () => { closeMenu(); openAdvancedPrintModal(); });
+  $('#mi-changelog').addEventListener('click', () => { closeMenu(); openChangelogModal(); });
+  $('#file-import').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if (f) importJSON(f);
+    e.target.value = '';
+  });
+
+  // Escape closes modals
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && UI.modal) closeModal();
+  });
+
+  // After every print, clean up the dynamic page-size CSS and printing-mode attr
+  // so the next print doesn't inherit the wrong page size or visible root.
+  window.addEventListener('afterprint', () => {
+    document.body.removeAttribute('data-printing');
+    const dyn = document.getElementById('dynamic-page-style');
+    if (dyn) dyn.remove();
+    const pr = $('#print-root');   if (pr) pr.innerHTML = '';
+    const rr = $('#report-root');  if (rr) rr.innerHTML = '';
+  });
+
+  renderBrowse();
+}
+
+// ============== AUTH GATE ==============
+// IMPORTANT: this is a client-side DETERRENT, not real security. The whole app
+// and this hash ship to the browser, so anyone who views source or opens
+// devtools can bypass it. It only stops casual visitors from using the tool on
+// a public URL (e.g. GitHub Pages). Your actual data never leaves the browser —
+// it lives in localStorage and in the JSON you export/import.
+//
+// To change the password: open the page, open the browser console, run
+//   setStripmakerPassword('your-new-password')
+// then paste the printed hash in below as AUTH_HASH and re-upload the file.
+const AUTH_HASH = '9efcb7b58b6f42f76534ac72e1b1b12055f901c103e16a80063c5134241c9e99';
+
+async function sha256hex(str) {
+  const bytes = new TextEncoder().encode(str);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+// Console helper to generate a new hash.
+window.setStripmakerPassword = async (pw) => {
+  const hex = await sha256hex(pw);
+  console.log('Set AUTH_HASH to:\n' + hex);
+  return hex;
+};
+
+function revealApp() {
+  const gate = document.getElementById('auth-gate');
+  if (gate) gate.remove();
+  init();
+}
+
+function startApp() {
+  // Already unlocked this browser session?
+  if (sessionStorage.getItem('sm_authed') === '1') { revealApp(); return; }
+  const form = document.getElementById('auth-form');
+  const input = document.getElementById('auth-input');
+  const err = document.getElementById('auth-err');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    err.textContent = '';
+    const hex = await sha256hex(input.value);
+    if (hex === AUTH_HASH) {
+      sessionStorage.setItem('sm_authed', '1');
+      revealApp();
+    } else {
+      err.textContent = 'Incorrect password.';
+      input.select();
+    }
+  });
+  setTimeout(() => input && input.focus(), 50);
+}
+
+startApp();
+</script>
+</body>
+</html>
