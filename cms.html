@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Congregate — Church management that gets out of the way</title>
+  <meta name="description" content="The all-in-one platform for churches. People, rosters, treasury, services, safeguarding, giving and your website — one place, run by volunteers, backed up while you sleep." />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <!-- Tailwind Play CDN: keeps this a single standalone file that matches the
+       in-app /product page. Fine for an unlisted marketing/pitch page. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "brand-header": "#628c6f",
+            brand: { DEFAULT: "#46694f", dark: "#36523e", 50: "#eef4f0", 100: "#d9e6df" },
+            accent: { DEFAULT: "#b08542", dark: "#8f6a2f", darker: "#6f5226", light: "#d8ad62" },
+          },
+          fontFamily: {
+            serif: ['Georgia', 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', 'Palatino', 'Times New Roman', 'serif'],
+            sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+
+<body class="bg-white font-sans text-stone-800">
+  <div class="bg-white text-stone-800">
+    <!-- Standalone product nav -->
+    <header class="sticky top-0 z-40 border-b border-stone-200 bg-white/90 backdrop-blur">
+      <nav class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <a href="#top" class="flex items-baseline gap-2">
+          <span class="font-serif text-xl font-semibold text-brand">Congregate</span>
+          <span class="hidden text-xs uppercase tracking-[0.2em] text-accent-dark sm:inline">for churches</span>
+        </a>
+        <div class="flex items-center gap-6 text-sm">
+          <a href="#features" class="hidden text-stone-600 hover:text-brand sm:inline">Features</a>
+          <a href="#pricing" class="hidden text-stone-600 hover:text-brand sm:inline">Pricing</a>
+          <a href="#faq" class="hidden text-stone-600 hover:text-brand md:inline">FAQ</a>
+          <button type="button" data-contact-sales class="inline-flex items-center justify-center rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark">Contact sales</button>
+        </div>
+      </nav>
+    </header>
+
+    <main id="top">
+      <!-- Hero -->
+      <section class="relative overflow-hidden">
+        <div class="absolute inset-0 -z-10 bg-gradient-to-b from-brand-50 to-white"></div>
+        <div class="mx-auto max-w-4xl px-6 py-24 text-center sm:py-32">
+          <span class="inline-block rounded-full border border-brand-100 bg-white px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-brand">
+            The all-in-one platform for churches
+          </span>
+          <h1 class="mt-6 font-serif text-4xl font-semibold leading-tight text-brand sm:text-6xl">
+            It&rsquo;s not the CMS you thought you wanted.
+          </h1>
+          <p class="mx-auto mt-6 max-w-2xl text-lg text-stone-600">
+            You went looking for a <em>Content</em> Management System. You found a
+            <em>Church</em> Management System. Turns out it&rsquo;s both — plus treasury,
+            rosters, safe ministry and a Sunday handout that prints itself.
+            You&rsquo;re welcome.
+          </p>
+          <div class="mt-9 flex flex-wrap items-center justify-center gap-3">
+            <button type="button" data-contact-sales class="inline-flex items-center justify-center rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark">Contact sales</button>
+            <a href="#features" class="inline-flex items-center justify-center rounded-full border border-brand/30 px-6 py-3 text-sm font-semibold text-brand transition hover:border-brand hover:bg-brand-50">See what&rsquo;s inside</a>
+          </div>
+          <p class="mt-6 text-sm text-stone-500">
+            Built by a church, for churches. Runs on coffee and grace.
+          </p>
+        </div>
+      </section>
+
+      <!-- The pun, landed -->
+      <section class="border-y border-stone-200 bg-white">
+        <div class="mx-auto grid max-w-5xl gap-6 px-6 py-16 sm:grid-cols-3 sm:items-center">
+          <div class="rounded-2xl border border-stone-200 p-6 text-center">
+            <p class="text-sm uppercase tracking-wide text-stone-400">Content Management System?</p>
+            <p class="mt-2 font-serif text-2xl text-brand">Your whole website.</p>
+          </div>
+          <div class="text-center">
+            <p class="font-serif text-5xl text-accent-dark">=</p>
+            <p class="mt-2 text-sm font-medium text-stone-500">why choose?</p>
+          </div>
+          <div class="rounded-2xl border border-stone-200 p-6 text-center">
+            <p class="text-sm uppercase tracking-wide text-stone-400">Church Management System?</p>
+            <p class="mt-2 font-serif text-2xl text-brand">Your whole church.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Feature snippets -->
+      <section id="features" class="bg-brand-50">
+        <div class="mx-auto max-w-6xl px-6 py-20">
+          <div class="mx-auto max-w-2xl text-center">
+            <h2 class="font-serif text-3xl font-semibold text-brand sm:text-4xl">Everything under one roof</h2>
+            <p class="mt-4 text-stone-600">
+              One login. One source of truth. Fewer spreadsheets held together by hope.
+            </p>
+          </div>
+          <div class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <!-- feature cards -->
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">👋</div><h3 class="mt-4 font-semibold text-stone-900">People &amp; households</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">A directory that knows who belongs to whom. Households, contact details and consent — without the shoebox of index cards.</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">🤝</div><h3 class="mt-4 font-semibold text-stone-900">Serving &amp; rosters</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">Many hands, light work. Positions, availability and rosters, so nobody schedules the person who&rsquo;s on holidays.</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">📅</div><h3 class="mt-4 font-semibold text-stone-900">Calendar sync</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">Your roster, on your phone. Subscribe once and every service, slot and event you&rsquo;re on flows into Google, Outlook or Apple Calendar — and stays in sync.</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">🖨️</div><h3 class="mt-4 font-semibold text-stone-900">Automated Sunday handouts</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">The order of service that prints itself. Songs, sermon, notices and a connect tear-off — one click, ready for the welcome desk.</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">📽️</div><h3 class="mt-4 font-semibold text-stone-900">Services &amp; slides</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">Run sheets, timings and projected slides from a single plan. The AV team may actually weep with joy.</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">💰</div><h3 class="mt-4 font-semibold text-stone-900">Treasury &amp; fund accounting</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">Render unto Caesar, accurately. Funds, donations, expenses, approvals and bank reconciliation — treasurer-grade.</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">🎁</div><h3 class="mt-4 font-semibold text-stone-900">Giving</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">Track gifts by fund, flag the tax-deductible ones, and keep the numbers honest and clear.</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">🌱</div><h3 class="mt-4 font-semibold text-stone-900">Discipleship pathway</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">See where people are on the journey — and gently notice who might be ready for a next step.</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">🛡️</div><h3 class="mt-4 font-semibold text-stone-900">Safe ministry</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">Safeguarding that watches the calendar for you. Working-with-children checks tracked, with warnings before they lapse.</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">🗂️</div><h3 class="mt-4 font-semibold text-stone-900">Governance &amp; decisions</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">Proposals in, decisions recorded — a memory that outlasts the meeting everyone half-remembers.</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">✉️</div><h3 class="mt-4 font-semibold text-stone-900">Messaging</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">Email your teams and congregation, with consent respected automatically. (Grace, but for mailing lists.)</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">🌐</div><h3 class="mt-4 font-semibold text-stone-900">Website &amp; content</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">Your public site, edited in plain language. Yes — this is the content-management half of the pun.</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">💾</div><h3 class="mt-4 font-semibold text-stone-900">Weekly backups</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">Your data, backed up three ways and kept in the digital safe. Rest like it&rsquo;s the Sabbath.</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">📚</div><h3 class="mt-4 font-semibold text-stone-900">Knowledge base</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">Built-in, editable guides for every feature, with version history. Onboarding without the hand-holding.</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">🔑</div><h3 class="mt-4 font-semibold text-stone-900">Roles &amp; access</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">The treasurer sees treasury. The pastor sees pastoral. Everyone sees what they should — and nothing they shouldn&rsquo;t.</p></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-2xl" aria-hidden="true">🔒</div><h3 class="mt-4 font-semibold text-stone-900">Secure &amp; private</h3><p class="mt-1.5 text-sm leading-relaxed text-stone-600">Locked down by design: hardened headers, mandatory two-factor for volunteers, and personal data kept where it belongs. Built to be trusted on the open internet.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Deep dives -->
+      <section class="bg-white">
+        <div class="mx-auto max-w-6xl space-y-24 px-6 py-24">
+          <!-- Deep dive 1 -->
+          <div class="grid items-center gap-12 lg:grid-cols-2">
+            <div>
+              <span class="text-xs font-semibold uppercase tracking-[0.2em] text-accent-dark">Sunday mornings</span>
+              <h2 class="mt-3 font-serif text-3xl font-semibold text-brand sm:text-4xl">The handout that prints itself</h2>
+              <p class="mt-4 text-stone-600">Build the service once — songs from the library, the sermon and its outline, prayer points, notices, giving details and a connect tear-off. Then generate the printed handout, the projected slides and the run sheet from that same plan. Change the plan, re-generate. That&rsquo;s it.</p>
+              <ul class="mt-6 space-y-2">
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Order of service + sermon outline</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Front image and connect tear-off</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Slides and run sheet from one source</li>
+              </ul>
+            </div>
+            <div>
+              <div class="rounded-2xl border border-stone-200 bg-gradient-to-br from-brand-50 to-white p-2 shadow-sm">
+                <div class="rounded-xl bg-white p-5">
+                  <div class="flex items-center gap-1.5 pb-3"><span class="h-2.5 w-2.5 rounded-full bg-stone-200"></span><span class="h-2.5 w-2.5 rounded-full bg-stone-200"></span><span class="h-2.5 w-2.5 rounded-full bg-stone-200"></span></div>
+                  <ul class="divide-y divide-stone-100">
+                    <li class="flex items-center justify-between py-2.5 text-sm font-semibold text-brand"><span>Sunday 10am — Order of Service</span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>Welcome &amp; call to worship</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>Song · In Christ Alone</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>Sermon · Philippians 2</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>Prayer &amp; notices</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>Sending</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Deep dive 2 (reversed) -->
+          <div class="grid items-center gap-12 lg:grid-cols-2">
+            <div class="lg:order-2">
+              <span class="text-xs font-semibold uppercase tracking-[0.2em] text-accent-dark">The books</span>
+              <h2 class="mt-3 font-serif text-3xl font-semibold text-brand sm:text-4xl">Treasury your treasurer will thank you for</h2>
+              <p class="mt-4 text-stone-600">Proper fund accounting, not a spreadsheet held together by hope. Track money against purpose-specific funds, move expenses through approval, import the bank statement and reconcile — all behind a health dashboard that shows the position at a glance. Visible only to the treasurer, because some things should be.</p>
+              <ul class="mt-6 space-y-2">
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Funds, donations &amp; expenses</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Approval workflow + bank reconciliation</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Financial-health dashboard</li>
+              </ul>
+            </div>
+            <div class="lg:order-1">
+              <div class="rounded-2xl border border-stone-200 bg-gradient-to-br from-brand-50 to-white p-2 shadow-sm">
+                <div class="rounded-xl bg-white p-5">
+                  <div class="flex items-center gap-1.5 pb-3"><span class="h-2.5 w-2.5 rounded-full bg-stone-200"></span><span class="h-2.5 w-2.5 rounded-full bg-stone-200"></span><span class="h-2.5 w-2.5 rounded-full bg-stone-200"></span></div>
+                  <ul class="divide-y divide-stone-100">
+                    <li class="flex items-center justify-between py-2.5 text-sm font-semibold text-brand"><span>Financial health</span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>General fund · $18,240</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>Building fund · $52,910</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>To reconcile · 3 lines</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>Awaiting approval · 1</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Deep dive 3 -->
+          <div class="grid items-center gap-12 lg:grid-cols-2">
+            <div>
+              <span class="text-xs font-semibold uppercase tracking-[0.2em] text-accent-dark">The volunteers</span>
+              <h2 class="mt-3 font-serif text-3xl font-semibold text-brand sm:text-4xl">Rosters without the group-chat chaos</h2>
+              <p class="mt-4 text-stone-600">Volunteers set their availability, and rosters build around it. Each person signs in to see exactly what they&rsquo;re on for — and only that. Safe-ministry aware, so nobody gets rostered into a role their check doesn&rsquo;t cover. The Tuesday-night reshuffle becomes a thing of the past.</p>
+              <ul class="mt-6 space-y-2">
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Availability that rosters respect</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Everyone sees their own responsibilities</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Safe-ministry aware</li>
+              </ul>
+            </div>
+            <div>
+              <div class="rounded-2xl border border-stone-200 bg-gradient-to-br from-brand-50 to-white p-2 shadow-sm">
+                <div class="rounded-xl bg-white p-5">
+                  <div class="flex items-center gap-1.5 pb-3"><span class="h-2.5 w-2.5 rounded-full bg-stone-200"></span><span class="h-2.5 w-2.5 rounded-full bg-stone-200"></span><span class="h-2.5 w-2.5 rounded-full bg-stone-200"></span></div>
+                  <ul class="divide-y divide-stone-100">
+                    <li class="flex items-center justify-between py-2.5 text-sm font-semibold text-brand"><span>Your Sunday</span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>10am · Welcome team</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>10am · Kids church (checked)</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>5pm · Sound desk</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>Availability · up to date</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Deep dive 4 (reversed) -->
+          <div class="grid items-center gap-12 lg:grid-cols-2">
+            <div class="lg:order-2">
+              <span class="text-xs font-semibold uppercase tracking-[0.2em] text-accent-dark">Every commitment</span>
+              <h2 class="mt-3 font-serif text-3xl font-semibold text-brand sm:text-4xl">Your calendar, wherever you already look</h2>
+              <p class="mt-4 text-stone-600">Nobody checks a sixth app. So your serving schedule comes to you: switch on your personal calendar link and every service you&rsquo;re rostered on, slot you&rsquo;re scheduled for and event you&rsquo;ve registered for appears right inside Google Calendar, Outlook or Apple Calendar — kept up to date on its own as the roster changes. And the moment you&rsquo;re given a task or a spot, an email lands too.</p>
+              <ul class="mt-6 space-y-2">
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Subscribe once — Google, Outlook or Apple</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Roster, run-sheet slots and events, auto-updated</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>An email the moment you&rsquo;re assigned</li>
+              </ul>
+            </div>
+            <div class="lg:order-1">
+              <div class="rounded-2xl border border-stone-200 bg-gradient-to-br from-brand-50 to-white p-2 shadow-sm">
+                <div class="rounded-xl bg-white p-5">
+                  <div class="flex items-center gap-1.5 pb-3"><span class="h-2.5 w-2.5 rounded-full bg-stone-200"></span><span class="h-2.5 w-2.5 rounded-full bg-stone-200"></span><span class="h-2.5 w-2.5 rounded-full bg-stone-200"></span></div>
+                  <ul class="divide-y divide-stone-100">
+                    <li class="flex items-center justify-between py-2.5 text-sm font-semibold text-brand"><span>My serving &amp; events</span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>Sun · Welcome team</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>Sun · Sound desk</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>Wed · Prayer night</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                    <li class="flex items-center justify-between py-2.5 text-sm text-stone-600"><span>Synced · just now</span><span class="h-1.5 w-16 rounded-full bg-brand-100"></span></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Testimonials -->
+      <section class="bg-brand text-white">
+        <div class="mx-auto max-w-6xl px-6 py-20">
+          <h2 class="text-center font-serif text-3xl font-semibold sm:text-4xl">What you&rsquo;ll hear around the church kitchen</h2>
+          <div class="mt-12 grid gap-6 sm:grid-cols-3">
+            <figure class="rounded-2xl bg-white/10 p-6 ring-1 ring-white/15"><blockquote class="font-serif text-xl leading-snug">&ldquo;I got my Tuesday nights back.&rdquo;</blockquote><figcaption class="mt-4 text-sm text-brand-100">— Every volunteer coordinator, eventually</figcaption></figure>
+            <figure class="rounded-2xl bg-white/10 p-6 ring-1 ring-white/15"><blockquote class="font-serif text-xl leading-snug">&ldquo;The handout was ready before I&rsquo;d finished my coffee.&rdquo;</blockquote><figcaption class="mt-4 text-sm text-brand-100">— One very relieved welcome team</figcaption></figure>
+            <figure class="rounded-2xl bg-white/10 p-6 ring-1 ring-white/15"><blockquote class="font-serif text-xl leading-snug">&ldquo;Our treasurer smiled. In a meeting. About software.&rdquo;</blockquote><figcaption class="mt-4 text-sm text-brand-100">— Witnessed, allegedly</figcaption></figure>
+          </div>
+          <p class="mt-8 text-center text-xs text-brand-100">Reactions dramatised. The relief is real.</p>
+        </div>
+      </section>
+
+      <!-- Pricing -->
+      <section id="pricing" class="bg-white">
+        <div class="mx-auto max-w-6xl px-6 py-24">
+          <div class="mx-auto max-w-2xl text-center">
+            <h2 class="font-serif text-3xl font-semibold text-brand sm:text-4xl">Priced for churches, not tech giants</h2>
+            <p class="mt-4 text-stone-600">
+              No per-seat surprises. No remortgaging the manse. Pick a starting point and
+              we&rsquo;ll tailor the rest.
+            </p>
+          </div>
+          <div class="mt-14 grid gap-6 lg:grid-cols-3">
+            <!-- Tier: Church Plant -->
+            <div class="relative flex flex-col rounded-2xl border p-8 border-stone-200">
+              <h3 class="font-serif text-2xl font-semibold text-brand">Church Plant</h3>
+              <p class="mt-1 text-sm text-stone-500">For the small and the scrappy.</p>
+              <div class="mt-6"><span class="font-serif text-3xl font-semibold text-stone-900">Let&rsquo;s talk</span><p class="mt-1 text-xs text-stone-500">Annual pricing in AUD, scaled to your church.</p></div>
+              <ul class="mt-6 flex-1 space-y-2.5">
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>People &amp; households</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Serving &amp; rosters</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Calendar sync</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Services &amp; handouts</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Your website</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Weekly backups</li>
+              </ul>
+              <button type="button" data-contact-sales class="mt-8 inline-flex items-center justify-center rounded-full border border-brand/30 px-6 py-3 text-sm font-semibold text-brand transition hover:border-brand hover:bg-brand-50 w-full">Contact sales</button>
+            </div>
+
+            <!-- Tier: Congregation (popular) -->
+            <div class="relative flex flex-col rounded-2xl border p-8 border-brand shadow-lg">
+              <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">Most popular</span>
+              <h3 class="font-serif text-2xl font-semibold text-brand">Congregation</h3>
+              <p class="mt-1 text-sm text-stone-500">For a full Sunday and a fuller calendar.</p>
+              <div class="mt-6"><span class="font-serif text-3xl font-semibold text-stone-900">Let&rsquo;s talk</span><p class="mt-1 text-xs text-stone-500">Annual pricing in AUD, scaled to your church.</p></div>
+              <ul class="mt-6 flex-1 space-y-2.5">
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Everything in Church Plant</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Treasury &amp; giving</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Discipleship pathway</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Safe ministry</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Governance &amp; messaging</li>
+              </ul>
+              <button type="button" data-contact-sales class="mt-8 inline-flex items-center justify-center rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark w-full">Contact sales</button>
+            </div>
+
+            <!-- Tier: Network -->
+            <div class="relative flex flex-col rounded-2xl border p-8 border-stone-200">
+              <h3 class="font-serif text-2xl font-semibold text-brand">Network</h3>
+              <p class="mt-1 text-sm text-stone-500">For the ambitious and the multiplying.</p>
+              <div class="mt-6"><span class="font-serif text-3xl font-semibold text-stone-900">Let&rsquo;s talk</span><p class="mt-1 text-xs text-stone-500">Annual pricing in AUD, scaled to your church.</p></div>
+              <ul class="mt-6 flex-1 space-y-2.5">
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Everything in Congregation</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Multiple congregations</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Priority support</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>Guided onboarding</li>
+                <li class="flex items-start gap-2 text-sm text-stone-700"><span class="mt-0.5 text-brand" aria-hidden="true">✓</span>A friendly human on call</li>
+              </ul>
+              <button type="button" data-contact-sales class="mt-8 inline-flex items-center justify-center rounded-full border border-brand/30 px-6 py-3 text-sm font-semibold text-brand transition hover:border-brand hover:bg-brand-50 w-full">Contact sales</button>
+            </div>
+          </div>
+          <p class="mt-8 text-center text-sm text-stone-500">
+            Ministry, small-church and plant discounts available. Ask and it shall be given.
+          </p>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="bg-brand-50">
+        <div class="mx-auto max-w-3xl px-6 py-24">
+          <h2 class="text-center font-serif text-3xl font-semibold text-brand sm:text-4xl">Questions leadership will ask</h2>
+          <dl class="mt-12 space-y-4">
+            <div class="rounded-2xl border border-stone-200 bg-white p-6"><dt class="font-semibold text-stone-900">Is it reliable enough to run our church on?</dt><dd class="mt-2 text-sm leading-relaxed text-stone-600">Yes. Full weekly backups kept three ways, an audit trail on sensitive actions, and role-based access so the right people see the right things. It&rsquo;s built to be depended on, not demoed and forgotten.</dd></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6"><dt class="font-semibold text-stone-900">Who owns our data?</dt><dd class="mt-2 text-sm leading-relaxed text-stone-600">You do. Full stop. Export any time, and backups are downloadable — your information never gets held hostage.</dd></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6"><dt class="font-semibold text-stone-900">Is it safe to put our members&rsquo; details in?</dt><dd class="mt-2 text-sm leading-relaxed text-stone-600">That&rsquo;s the bar it&rsquo;s built to. Hardened security headers, mandatory two-factor for volunteers, role-based access, an audit trail, and personal data kept off the public surface — designed to be safely hosted on the open internet.</dd></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6"><dt class="font-semibold text-stone-900">Do we need an IT team?</dt><dd class="mt-2 text-sm leading-relaxed text-stone-600">No. It&rsquo;s built to be run by volunteers, with a built-in knowledge base that documents every feature in plain language.</dd></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6"><dt class="font-semibold text-stone-900">Is it really Christian software, or just software with a fish on it?</dt><dd class="mt-2 text-sm leading-relaxed text-stone-600">Built by a church, shaped by real ministry. Discipleship, safe ministry and Sunday mornings are first-class features, not bolt-ons.</dd></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6"><dt class="font-semibold text-stone-900">How much does it cost?</dt><dd class="mt-2 text-sm leading-relaxed text-stone-600">Simple annual pricing, scaled to your church rather than your postcode. Small-church and plant pricing available — just ask.</dd></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-6"><dt class="font-semibold text-stone-900">Can it do [that specific thing]?</dt><dd class="mt-2 text-sm leading-relaxed text-stone-600">Probably — or it&rsquo;s on the list. Tell sales what you need and we&rsquo;ll be honest about where it&rsquo;s at.</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <!-- Final CTA -->
+      <section class="bg-white">
+        <div class="mx-auto max-w-4xl px-6 py-24 text-center">
+          <h2 class="font-serif text-3xl font-semibold text-brand sm:text-5xl">
+            Give your volunteers their evenings back.
+          </h2>
+          <p class="mx-auto mt-5 max-w-xl text-lg text-stone-600">
+            Less admin, more ministry. Let&rsquo;s find the right fit for your church.
+          </p>
+          <div class="mt-9 flex flex-wrap items-center justify-center gap-3">
+            <button type="button" data-contact-sales class="inline-flex items-center justify-center rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark">Contact sales</button>
+            <a href="mailto:sales@congregate.church?subject=Book%20a%20walkthrough" class="inline-flex items-center justify-center rounded-full border border-brand/30 px-6 py-3 text-sm font-semibold text-brand transition hover:border-brand hover:bg-brand-50">Book a walkthrough</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Standalone product footer -->
+    <footer class="border-t border-stone-200 bg-white">
+      <div class="mx-auto flex max-w-6xl flex-col items-center gap-3 px-6 py-12 text-center">
+        <span class="font-serif text-lg font-semibold text-brand">Congregate</span>
+        <p class="max-w-md text-sm text-stone-500">Church management that gets out of the way.</p>
+        <p class="text-sm text-stone-500">
+          Talk to us:
+          <a href="mailto:sales@congregate.church" class="text-brand hover:underline">sales@congregate.church</a>
+        </p>
+        <p class="mt-2 text-xs text-stone-400">
+          &ldquo;Whatever you do, work heartily, as for the Lord.&rdquo; · Colossians 3:23
+        </p>
+        <p class="text-xs text-stone-400">
+          Built in-house at North Canberra Baptist Church. © <span id="year">2026</span> Congregate.
+        </p>
+      </div>
+    </footer>
+
+    <!-- The "Contact sales" punchline: it's free. -->
+    <div id="contact-sales-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-stone-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="contact-sales-title">
+      <div class="relative w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl" data-modal-card>
+        <button type="button" data-modal-close aria-label="Close" class="absolute right-4 top-4 text-stone-400 transition hover:text-stone-700">✕</button>
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-3xl" aria-hidden="true">🕊️</div>
+        <span class="mt-5 inline-block rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-accent-dark">Plot twist</span>
+        <h2 id="contact-sales-title" class="mt-4 font-serif text-3xl font-semibold text-brand">It&rsquo;s free.</h2>
+        <p class="mt-4 text-stone-600">There&rsquo;s no sales team on the other end of that button — and no invoice, either. Congregate is free. Like salvation, you need only ask.</p>
+        <p class="mt-3 text-sm text-stone-500">Built by your church family, for your church family. Made with love (and a little Next.js).</p>
+        <p class="mt-4 border-t border-stone-100 pt-4 text-xs text-stone-400">Designed &amp; built by <span class="font-semibold text-stone-500">Taylor Smith</span>. This whole thing — including this cheeky pop-up — is his work.</p>
+        <div class="mt-7 flex flex-wrap items-center justify-center gap-3">
+          <a href="mailto:sales@congregate.church?subject=I'd%20like%20to%20ask%20about%20Congregate" class="inline-flex items-center justify-center rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark">Ask away →</a>
+          <button type="button" data-modal-close class="inline-flex items-center justify-center rounded-full border border-brand/30 px-6 py-3 text-sm font-semibold text-brand transition hover:border-brand hover:bg-brand-50">Amen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var modal = document.getElementById("contact-sales-modal");
+      var card = modal.querySelector("[data-modal-card]");
+
+      function openModal() {
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        document.body.style.overflow = "hidden";
+      }
+      function closeModal() {
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+        document.body.style.overflow = "";
+      }
+
+      document.querySelectorAll("[data-contact-sales]").forEach(function (btn) {
+        btn.addEventListener("click", openModal);
+      });
+      modal.querySelectorAll("[data-modal-close]").forEach(function (btn) {
+        btn.addEventListener("click", closeModal);
+      });
+      // Click the backdrop (but not the card) to close.
+      modal.addEventListener("click", function (e) {
+        if (!card.contains(e.target)) closeModal();
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") closeModal();
+      });
+
+      // Keep the footer year current.
+      document.getElementById("year").textContent = String(new Date().getFullYear());
+    })();
+  </script>
+</body>
+</html>
