@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>graycor.github.io</title>
+  <!-- GitHub Pages cannot send headers, so the policy rides in a meta tag. It only runs the
+       exact inline script and style hashed below and loads nothing from other sites: no web
+       fonts (Google Fonts logged every visit), no CDNs. Run `node tools/csp.mjs` after editing
+       either block, or the page will not start. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-crbwvjfpStI1woWylPO3HamNaU69uy6FeGCzG6nUMsU='; style-src 'sha256-ldRddSw4nAjLSnCJkV2eyI2/2qdEANx1YYzov07lqTQ='; img-src 'self' data:; connect-src 'none'; font-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; worker-src 'none'; manifest-src 'none'; frame-src 'none'" />
+  <meta name="referrer" content="no-referrer" />
+  <!-- An empty icon stops every visit asking for a favicon.ico that does not exist. -->
+  <link rel="icon" href="data:," />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #4f8ef7;
+      --accent-glow: rgba(79, 142, 247, 0.18);
+      --text: #e8eaf0;
+      --muted: #6b7080;
+      /* Dark scrollbars and form controls, so the dialog's scroll strips aren't white. */
+      color-scheme: dark;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Arial, sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    /* subtle grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .container {
+      position: relative;
+      text-align: center;
+      max-width: 560px;
+      width: 100%;
+      animation: fadeUp 0.7s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .eyebrow {
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+      font-size: clamp(1.6rem, 5vw, 2.4rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      line-height: 1.15;
+    }
+
+    h1 span { color: var(--accent); }
+
+    .divider {
+      width: 48px;
+      height: 2px;
+      background: var(--accent);
+      margin: 1.75rem auto;
+      border-radius: 2px;
+    }
+
+    .tagline {
+      font-size: 0.95rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      margin-bottom: 2.5rem;
+    }
+
+    /* --- Menu grid --- */
+    .menu {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+    }
+
+    .menu-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 1.4rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      text-decoration: none;
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    }
+
+    .menu-btn:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 18px var(--accent-glow);
+      transform: translateY(-2px);
+    }
+
+    .menu-btn .icon-green { color: #3fbf5f; }
+
+    .menu-btn .icon {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+
+    /* --- Coming soon --- */
+    .soon {
+      margin-top: 3rem;
+    }
+
+    .soon h2 {
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.4rem;
+    }
+
+    .soon .note {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .soon-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 0.85rem;
+    }
+
+    .soon-btn {
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 1.2rem 0.6rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    }
+
+    .soon-btn:hover, .soon-btn:focus-visible {
+      border-color: var(--accent);
+      box-shadow: 0 0 18px var(--accent-glow);
+      transform: translateY(-2px);
+      outline: none;
+    }
+
+    .soon-btn img {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+    }
+
+    /* Corner ribbon: says "not out yet" before anyone clicks. */
+    .soon-btn::after {
+      content: 'Soon';
+      position: absolute;
+      top: 9px;
+      right: -26px;
+      width: 90px;
+      padding: 2px 0;
+      transform: rotate(40deg);
+      background: var(--accent);
+      color: #0f1117;
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+    }
+
+    /* --- App detail dialog --- */
+    dialog.app {
+      margin: auto;
+      width: min(760px, 100% - 1.5rem);
+      max-height: calc(100% - 1.5rem);
+      padding: 0;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      text-align: left;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    dialog.app::backdrop {
+      background: rgba(8, 9, 14, 0.78);
+    }
+
+    .app-body {
+      padding: 1.6rem;
+    }
+
+    .app-head {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+      padding-right: 2.5rem;
+    }
+
+    .app-head img {
+      width: 72px;
+      height: 72px;
+      border-radius: 16px;
+      flex: none;
+    }
+
+    .app-head h2 {
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+      font-size: 1.35rem;
+    }
+
+    .app-head p {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .app-close {
+      position: absolute;
+      top: 0.9rem;
+      right: 0.9rem;
+      width: 2.2rem;
+      height: 2.2rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+
+    .app-close:hover { border-color: var(--accent); }
+
+    .app-summary {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .app-features {
+      margin: 0 0 1.4rem 1.2rem;
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+
+    .app-features li { margin-bottom: 0.35rem; }
+
+    .app-shots {
+      display: flex;
+      gap: 0.8rem;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-color: var(--border) transparent;
+      padding-bottom: 0.6rem;
+      margin-bottom: 1.4rem;
+    }
+
+    /* A table, so the caption wraps at the image's width instead of stretching the figure. */
+    .app-shots figure {
+      display: table;
+      flex: 0 0 auto;
+      max-width: 88%;
+      scroll-snap-align: start;
+    }
+
+    .app-shots img {
+      display: block;
+      max-height: 300px;
+      max-width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: zoom-in;
+    }
+
+    .app-shots figcaption {
+      display: table-caption;
+      caption-side: bottom;
+      margin-top: 0.35rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* Tapping a screenshot swaps the strip for full-width images, one under another. */
+    .app-shots.zoomed { display: block; }
+    .app-shots.zoomed figure { max-width: 100%; margin-bottom: 1rem; }
+    .app-shots.zoomed img { max-height: none; cursor: zoom-out; }
+
+    .app-foot {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.8rem 1.2rem;
+    }
+
+    .app-dl {
+      position: relative;
+      display: inline-block;
+      padding: 0.8rem 1.6rem;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #0f1117;
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-decoration: none;
+      letter-spacing: 0.04em;
+    }
+
+    /* Unreleased: the button is there so the page reads the same once it ships,
+       but greyed out, with no link, and banded with "Coming soon". */
+    .app-dl[aria-disabled="true"] {
+      background: #3a3e4f;
+      color: #8a8fa0;
+      cursor: not-allowed;
+      overflow: hidden;
+    }
+
+    .app-dl[aria-disabled="true"]::after {
+      content: 'Coming soon';
+      position: absolute;
+      left: -10%;
+      right: -10%;
+      top: 50%;
+      transform: translateY(-50%) rotate(-6deg);
+      padding: 2px 0;
+      background: #f2b84b;
+      color: #1a1d27;
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .app-platforms {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+    }
+
+    .app-platforms a { color: var(--accent); }
+
+    .footer {
+      margin-top: 3rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p class="eyebrow">github.io</p>
+    <h1>graycor<span>.</span>github<span>.</span>io</h1>
+    <div class="divider"></div>
+    <p class="tagline">A collection of tools &amp; projects</p>
+
+    <nav class="menu">
+      <a href="bookscan.html" class="menu-btn">
+        <span class="icon">📚</span>
+        BookScan
+      </a>
+      <a href="carnivorenutrition.html" class="menu-btn">
+        <span class="icon">🥩</span>
+        Carnivore<br>Nutrition
+      </a>
+      <a href="cms.html" class="menu-btn">
+        <span class="icon icon-green">🌿</span>
+        CMS
+      </a>
+      <a href="qr.html" class="menu-btn">
+        <span class="icon">🔳</span>
+        QR Code<br>Generator
+      </a>
+      <!-- Add more buttons here as you expand -->
+    </nav>
+
+    <section class="soon" aria-labelledby="soon-title">
+      <h2 id="soon-title">Coming soon</h2>
+      <p class="note">Apps I've built and use every day that aren't public yet. Tap one for a look.</p>
+      <div class="soon-grid" id="soon-grid"></div>
+    </section>
+
+    <p class="footer">graycor · github pages</p>
+  </div>
+
+  <dialog class="app" id="app" aria-labelledby="app-name">
+    <button class="app-close" id="app-close" type="button" aria-label="Close">✕</button>
+    <div class="app-body">
+      <div class="app-head">
+        <img id="app-logo" alt="" />
+        <div>
+          <h2 id="app-name"></h2>
+          <p id="app-tagline"></p>
+        </div>
+      </div>
+      <p class="app-summary" id="app-summary"></p>
+      <ul class="app-features" id="app-features"></ul>
+      <div class="app-shots" id="app-shots"></div>
+      <div class="app-foot">
+        <a class="app-dl" id="app-dl">Download latest release</a>
+        <span class="app-platforms" id="app-platforms"></span>
+      </div>
+    </div>
+  </dialog>
+
+  <!--
+    The coming-soon apps. Each repo is private until it ships, so "released" stays false and the
+    download button stays greyed out with no link. Flip it to true once the repo is public and the
+    button links to the repo's latest release. Logos and screenshots live in img/apps/.
+    tests/soon.test.mjs checks every image here exists.
+  -->
+  <script type="application/json" id="apps-data">
+[
+  {"id": "anchorage", "name": "Anchorage", "repo": "TheCentreHub/anchorage", "released": false, "logo": "img/apps/anchorage.webp", "tagline": "Time, clients and invoices for a one-person consultancy", "summary": "Punch in and out against a client and project from the PC or your phone, keep each client's statements of work, timesheets and invoices together, and run the whole business from one board. When the accountant or the ATO asks for evidence, it hands over a single file.", "features": ["One-tap timer by client, project and kind of work, with billable and non-billable time kept apart", "Engagements with hourly rates or fixed fees, budget meters and encrypted files", "A business board with priorities, due dates and links to your documents", "Billable hours become a Xero draft invoice plus a timesheet PDF"], "platforms": "Ubuntu and Bazzite, with phone access at home", "shots": [{"src": "img/apps/anchorage-1.webp", "caption": "Today: the running timer, the week so far and what needs attention"}, {"src": "img/apps/anchorage-2.webp", "caption": "The business board, by area and priority"}, {"src": "img/apps/anchorage-3.webp", "caption": "Billable work ready to hand off to Xero"}, {"src": "img/apps/anchorage-4.webp", "caption": "A week of time entries"}]},
+  {"id": "bluestone", "name": "Bluestone", "repo": "TheCentreHub/bluestone", "released": false, "logo": "img/apps/bluestone.webp", "tagline": "Compliance assessments for Australian auditors and their clients", "summary": "One place for an audit firm and the organisations it assesses to work through the ASD Essential Eight, the Information Security Manual, and APRA CPS 234 and CPS 230, from the first questionnaire to the board report.", "features": ["Auditor portal: engagements, assessments and every client at a glance", "Client portal: your own maturity, questionnaires and evidence requests", "Rebase an assessment onto a new framework release and see exactly what changed", "Read-only Microsoft 365 and Entra ID checks, kept as tamper-evident evidence"], "platforms": "Linux server", "shots": [{"src": "img/apps/bluestone-1.webp", "caption": "An Essential Eight assessment: maturity by strategy and progress at a glance"}, {"src": "img/apps/bluestone-2.webp", "caption": "Every engagement and client in one list"}, {"src": "img/apps/bluestone-3.webp", "caption": "Framework versions, with a diff between any two"}]},
+  {"id": "signet", "name": "Signet", "repo": "TheCentreHub/signet", "released": false, "logo": "img/apps/signet.webp", "tagline": "Sign PDFs cryptographically from your own PC or phone", "summary": "Upload a contract, drag signature boxes onto its pages, sign, and download a PDF whose signatures show if anything changes afterwards. Everything runs on your own computer behind passkey sign-in.", "features": ["Real digital signatures with trusted timestamps, not just a picture of one", "Your drawn signature in each box, and an optional lock after the last one", "Hand a document to someone else to sign on your phone", "A verify page that tells you whether a signed PDF has been changed"], "platforms": "Ubuntu and Bazzite, with phone access at home", "shots": [{"src": "img/apps/signet-1.webp", "caption": "Placing signature boxes on a contract"}, {"src": "img/apps/signet-2.webp", "caption": "Signing in person on the same screen"}, {"src": "img/apps/signet-3.webp", "caption": "Documents and where each one is up to"}]},
+  {"id": "congregate", "name": "Congregate", "repo": "TheCentreHub/Congregate", "released": false, "logo": "img/apps/congregate.webp", "tagline": "Church management and a church website in one app", "summary": "People, households and groups, services and rosters, events, the library, safe ministry tracking, giving and treasury, a staff-editable public website, and a signed-in area for everyone in the church family.", "features": ["Rosters with calendar sync, and Sunday handouts built automatically", "Fund accounting, giving and treasury reports", "Events with registrations, and growth journeys for newcomers", "Working With Vulnerable People tracking for safe ministry"], "platforms": "Linux, with phone access at home", "more": "cms.html", "shots": []},
+  {"id": "heimdall", "name": "Heimdall", "repo": "Graycor/Heimdall", "released": false, "logo": "img/apps/heimdall.webp", "tagline": "Run dedicated game servers from one friendly dashboard", "summary": "Heimdall lives on the PC that hosts your game servers and gives you a web page to set them up, start and stop them, keep them backed up, and see at a glance that everything is healthy. No command line required.", "features": ["ARK, Conan Exiles, Minecraft, Palworld, Valheim, V Rising and eight more", "Downloads the server files for you and picks ports that won't clash", "Scheduled backups and plain-English explanations when something goes wrong", "Signed releases that update themselves"], "platforms": "Ubuntu, Bazzite and SteamOS", "shots": [{"src": "img/apps/heimdall-1.webp", "caption": "The dashboard: every server, its health and one-click start"}, {"src": "img/apps/heimdall-2.webp", "caption": "A server page explains in plain English what still needs doing"}]},
+  {"id": "lambigit-bisaya", "name": "Lambigit Bisaya", "repo": "Graycor/Lambigit-Bisaya", "released": false, "logo": "img/apps/lambigit-bisaya.webp", "tagline": "Learn Cebuano with a native speaker in the loop", "summary": "A self-hosted app for learning Cebuano (Bisaya), built for one learner and one native-speaker reviewer, and designed so that the native speaker always has the final say over anything a computer suggests.", "features": ["Spaced repetition with the FSRS-6 scheduler and six kinds of drill", "A ten-level course, the first four levels seeded with over 1,200 items", "Listening drills with slow replay, and a timed speed round", "A review queue where the native speaker approves every item"], "platforms": "Linux, used from your phone", "shots": [{"src": "img/apps/lambigit-bisaya-1.webp", "caption": "The course, level by level"}, {"src": "img/apps/lambigit-bisaya-2.webp", "caption": "A lesson starts with the grammar, in plain English"}, {"src": "img/apps/lambigit-bisaya-3.webp", "caption": "Meeting a new word"}, {"src": "img/apps/lambigit-bisaya-4.webp", "caption": "The dictionary, with every item marked until a native speaker checks it"}]},
+  {"id": "larderlogic", "name": "LarderLogic", "repo": "Graycor/LarderLogic", "released": false, "logo": "img/apps/larderlogic.webp", "tagline": "A pantry manager for the whole household", "summary": "Scan a barcode to add or use up stock, keep a minimum and maximum for each item, get told when something runs low, compare supermarket prices, and shop from a list grouped by store. It runs on one PC and everyone uses it from their phone.", "features": ["Barcode scanning from the phone camera", "Coles, Woolworths and ALDI prices side by side, unit price first", "A shopping list grouped by store with a recommended quantity for each item", "A sign-in for each person, with passkeys"], "platforms": "Ubuntu and Bazzite, used from your phone", "shots": [{"src": "img/apps/larderlogic-1.webp", "caption": "The Storeroom: what is low, what is out, and where it lives"}, {"src": "img/apps/larderlogic-2.webp", "caption": "The shopping list, split by store to save money"}, {"src": "img/apps/larderlogic-3.webp", "caption": "One item: stock, minimum and maximum, and use-by dates"}]},
+  {"id": "limelight", "name": "Limelight", "repo": "Graycor/limelight", "released": false, "logo": "img/apps/limelight.webp", "tagline": "Background blur and noise suppression for Linux", "summary": "Background blur, background replacement and noise suppression for your webcam and microphone. A Linux alternative to NVIDIA Broadcast and Krisp that sits in your tray and gives every app a cleaned-up camera and microphone to choose from.", "features": ["Blur or replace your background in any video call", "Removes keyboard clatter, fans and background noise from your microphone", "Uses your GPU when you have one and scales down when you don't", "Works with every app as a normal camera and microphone"], "platforms": "Ubuntu 24.04 or later, and Bazzite", "shots": []},
+  {"id": "mediabot", "name": "MediaBot", "repo": "Graycor/MediaBot", "released": false, "logo": "img/apps/mediabot.webp", "tagline": "Rename and organise media for Plex and Jellyfin", "summary": "A media file renamer and organiser for media servers like Plex and Jellyfin, with a clean web interface for everyday use and a full command line for big automated batches. Every rename is previewed first and can be undone.", "features": ["Movies, TV episodes and anime matched against online metadata", "TMDB, TVmaze, OMDb and AniList, with priorities you choose", "Preview every rename before anything moves", "Also finds duplicates, muxes subtitles, backs up discs and re-encodes"], "platforms": "Linux", "shots": [{"src": "img/apps/mediabot-1.webp", "caption": "Previewing a batch of renames before anything moves"}, {"src": "img/apps/mediabot-2.webp", "caption": "Metadata providers, with live availability and priorities"}]},
+  {"id": "metastrip", "name": "metastrip", "repo": "Graycor/metastrip", "released": false, "logo": "img/apps/metastrip.svg", "tagline": "Strip hidden details from images without touching the pixels", "summary": "Removes the hidden details that image files carry, such as AI prompts and workflows, model names, seeds, camera serial numbers and GPS locations, from PNG, JPEG and WebP images. It proves the picture itself is byte-for-byte unchanged before it writes anything.", "features": ["Lossless: files are rebuilt from the original bytes", "Catches AI generator recipes, including ones hidden inside the pixels", "Right-click Scrub image metadata in Dolphin and Nautilus", "A command line for whole folders at once"], "platforms": "Ubuntu and Bazzite", "shots": [{"src": "img/apps/metastrip-2.webp", "caption": "Cleaning: the pictures are untouched, the hidden details are gone"}]},
+  {"id": "noodle-shop", "name": "Noodle Shop", "repo": "Graycor/noodle-shop", "released": false, "logo": "img/apps/noodle-shop.webp", "tagline": "Local AI image and video generation on your own GPU", "summary": "ComfyUI packaged to run privately on a Bazzite PC with an NVIDIA graphics card, with ready-made workflows for pictures, short animated clips and game art upscaling. Nothing leaves the PC, and the saved images carry no prompt or workflow.", "features": ["Z-Image Turbo and Qwen-Image from one dropdown, with a whole queue of prompts", "Animate any picture into a short clip with Wan 2.2", "Upscale or remaster a folder of game textures and sprites", "A web front end for generating from your phone"], "platforms": "Bazzite with an NVIDIA GPU", "shots": []},
+  {"id": "pawnstorm", "name": "Pawn Storm", "repo": "Graycor/pawnstorm", "released": false, "logo": "img/apps/pawnstorm.webp", "tagline": "Find out what to work on in chess", "summary": "Reviews your Lichess and Chess.com games with Stockfish on your own PC and turns the result into plain answers: where your accuracy drops, which tactics you keep missing, which openings are going badly, and what to work on next.", "features": ["Downloads your whole game history and analyses it locally", "Weak spots by tactic, opening and game phase", "Play the built-in engine at any strength and style, scored move by move", "Export the whole picture as a single PDF"], "platforms": "Linux, with phone access at home", "shots": []},
+  {"id": "the-first-scroll", "name": "The First Scroll", "repo": "Graycor/The-First-Scroll", "released": false, "logo": "img/apps/the-first-scroll.webp", "tagline": "A modern engine for The Elder Scrolls: Arena", "summary": "Plays your own copy of The Elder Scrolls: Arena (1994) as a first-person RPG on Vulkan, with modern upscaling, HDR and an optional remastered texture pack. It ships no game files: the free Steam version of Arena works and is found automatically.", "features": ["The whole original game, from the Imperial Dungeon to the finale", "Original or Remastered rules and look, chosen on first run", "DLSS on NVIDIA RTX cards, FSR on any card, and HDR output", "An experimental VR mode through SteamVR"], "platforms": "Linux and Windows", "shots": []}
+]
+  </script>
+  <script>
+    (() => {
+      const apps = JSON.parse(document.getElementById('apps-data').textContent);
+      const grid = document.getElementById('soon-grid');
+      const dialog = document.getElementById('app');
+      const $ = (id) => document.getElementById(id);
+
+      for (const app of apps) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'soon-btn';
+        const img = document.createElement('img');
+        img.src = app.logo;
+        img.alt = '';
+        btn.append(img, app.name);
+        btn.addEventListener('click', () => { location.hash = app.id; });
+        grid.append(btn);
+      }
+
+      function show(app) {
+        $('app-logo').src = app.logo;
+        $('app-name').textContent = app.name;
+        $('app-tagline').textContent = app.tagline;
+        $('app-summary').textContent = app.summary;
+        $('app-features').replaceChildren(...app.features.map((f) => {
+          const li = document.createElement('li');
+          li.textContent = f;
+          return li;
+        }));
+        const shots = $('app-shots');
+        shots.classList.remove('zoomed');
+        shots.hidden = app.shots.length === 0;
+        shots.replaceChildren(...app.shots.map((s) => {
+          const fig = document.createElement('figure');
+          const img = document.createElement('img');
+          img.src = s.src;
+          img.alt = s.caption;
+          img.loading = 'lazy';
+          const cap = document.createElement('figcaption');
+          cap.textContent = s.caption;
+          fig.append(img, cap);
+          return fig;
+        }));
+        const dl = $('app-dl');
+        if (app.released) {
+          dl.href = `https://github.com/${app.repo}/releases/latest`;
+          dl.removeAttribute('aria-disabled');
+          dl.removeAttribute('tabindex');
+        } else {
+          // No href at all, so nothing leads to a private repo's 404.
+          dl.removeAttribute('href');
+          dl.setAttribute('aria-disabled', 'true');
+          dl.setAttribute('role', 'link');
+          dl.tabIndex = -1;
+        }
+        $('app-platforms').textContent = app.platforms;
+        if (app.more) {
+          const more = document.createElement('a');
+          more.href = app.more;
+          more.textContent = 'More about ' + app.name;
+          $('app-platforms').append(' · ', more);
+        }
+        if (!dialog.open) dialog.showModal();
+        dialog.scrollTop = 0;
+      }
+
+      // The hash names the open app, so a link like graycor.github.io/#signet opens straight to it
+      // and the phone's back button closes it.
+      function route() {
+        const app = apps.find((a) => a.id === location.hash.slice(1));
+        if (app) show(app);
+        else if (dialog.open) dialog.close();
+      }
+
+      dialog.addEventListener('close', () => {
+        if (location.hash) history.pushState('', '', location.pathname + location.search);
+      });
+      $('app-close').addEventListener('click', () => dialog.close());
+      // A tap on the backdrop lands on the dialog itself, not on anything inside it.
+      dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+      $('app-shots').addEventListener('click', (e) => {
+        if (e.target.tagName === 'IMG') e.currentTarget.classList.toggle('zoomed');
+      });
+      window.addEventListener('hashchange', route);
+      route();
+    })();
+  </script>
+</body>
+</html>

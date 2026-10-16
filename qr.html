@@ -1,0 +1,2060 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- GitHub Pages cannot send headers, so the policy rides in a meta tag. It forbids every
+       network request the page could make after loading (no fetch, fonts, images or forms
+       leave the browser) and only runs the exact inline script and style hashed below.
+       Run `node tools/csp.mjs` after editing either block, or the page will not start. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-4mTe0kSNsCu08ZZS2WzXt70NfWjeGvDnTvZ22Ig3l5M='; style-src 'sha256-EyNS3Ws6NDJmHgzGStlFhqILon3/6EpjYSd2xYqrDAY='; img-src data: blob:; connect-src 'none'; font-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; worker-src 'none'; manifest-src 'none'" />
+  <meta name="referrer" content="no-referrer" />
+  <!-- An empty icon stops every visit asking for a favicon.ico that does not exist. -->
+  <link rel="icon" href="data:," />
+  <meta name="description" content="A free QR code generator that runs entirely in your browser. No sign-up, no tracking, no cookies." />
+  <title>QR Code Generator · graycor.github.io</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-2: #222634;
+      --border: #2a2d3e;
+      --accent: #4f8ef7;
+      --accent-glow: rgba(79, 142, 247, 0.18);
+      --text: #e8eaf0;
+      --muted: #8a8fa0;
+      --warn: #f2b84b;
+      --bad: #f26b6b;
+      --good: #5fd08a;
+      --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+      --sans: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.45;
+      min-height: 100vh;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: 0.25;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    a { color: var(--accent); }
+
+    header, main, footer { max-width: 1100px; margin: 0 auto; }
+
+    header { margin-bottom: 1.25rem; }
+    .back { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; }
+    h1 { font-family: var(--mono); font-size: clamp(1.4rem, 4vw, 2rem); margin-top: 0.5rem; letter-spacing: -0.02em; }
+    h1 span { color: var(--accent); }
+    .lede { color: var(--muted); margin-top: 0.35rem; max-width: 60ch; }
+
+    main {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr;
+      grid-template-areas: "content" "preview" "design";
+    }
+    @media (min-width: 900px) {
+      main {
+        grid-template-columns: minmax(0, 1fr) 360px;
+        grid-template-areas: "content preview" "design preview";
+        align-items: start;
+      }
+      #preview-panel { position: sticky; top: 1rem; }
+    }
+    #content-panel { grid-area: content; }
+    #design-panel { grid-area: design; }
+    #preview-panel { grid-area: preview; }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .panel h2 { font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.75rem; }
+
+    .kinds { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .kinds button {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 0.35rem 0.8rem;
+      font: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .kinds button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .kinds button:focus-visible, .btn:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    fieldset { border: none; min-width: 0; }
+    .grid { display: grid; gap: 0.75rem; grid-template-columns: 1fr; }
+    @media (min-width: 560px) { .grid.two { grid-template-columns: 1fr 1fr; } .span2 { grid-column: span 2; } }
+
+    label { display: block; font-size: 0.82rem; color: var(--muted); }
+    label > input:not([type="checkbox"]), label > select, label > textarea { margin-top: 0.25rem; }
+    input[type="text"], input[type="url"], input[type="email"], input[type="tel"], input[type="number"], input[type="datetime-local"], select, textarea {
+      display: block;
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5rem 0.6rem;
+      font: inherit;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    textarea { resize: vertical; min-height: 4.5rem; }
+    input[type="color"] { width: 3rem; height: 2.2rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); padding: 2px; cursor: pointer; vertical-align: middle; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .check { display: flex; align-items: center; gap: 0.5rem; color: var(--text); font-size: 0.88rem; }
+    .check input { accent-color: var(--accent); width: 1rem; height: 1rem; }
+    .colour { display: flex; align-items: center; gap: 0.6rem; color: var(--text); }
+    .hint { font-size: 0.78rem; color: var(--muted); margin-top: 0.25rem; }
+
+    details { border-top: 1px solid var(--border); padding: 0.6rem 0; }
+    details:first-of-type { border-top: none; }
+    summary { cursor: pointer; font-weight: 600; padding: 0.2rem 0; }
+    details > .grid { margin-top: 0.75rem; }
+
+    .preview-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+      border-radius: 8px;
+      padding: 1rem;
+      background-color: #e9ebf0;
+      background-image: linear-gradient(45deg, #d5d8e0 25%, transparent 25%), linear-gradient(-45deg, #d5d8e0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d5d8e0 75%), linear-gradient(-45deg, transparent 75%, #d5d8e0 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    }
+    #preview { display: block; width: 100%; max-width: 300px; height: auto; }
+    .placeholder { color: #50566a; text-align: center; font-size: 0.9rem; padding: 2rem 1rem; }
+    .blocked .placeholder { color: #8f2f2f; font-weight: 600; }
+
+    .meta { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); margin-top: 0.6rem; text-align: center; }
+    .scan { font-size: 0.8rem; margin-top: 0.4rem; text-align: center; color: var(--muted); }
+    .scan.ok { color: var(--good); }
+    .scan.fail { color: var(--bad); }
+
+    .notes { list-style: none; margin-top: 0.75rem; display: grid; gap: 0.4rem; }
+    .notes li { font-size: 0.82rem; border-radius: 6px; padding: 0.45rem 0.6rem; border: 1px solid; }
+    .notes li.block { color: #ffd0d0; border-color: #6b2b2b; background: #2a1517; }
+    .notes li.warn { color: #ffe6b3; border-color: #5e4a1f; background: #241e12; }
+
+    .payload { margin-top: 0.75rem; }
+    .payload summary { font-size: 0.82rem; font-weight: 400; color: var(--muted); }
+    .payload pre { font-family: var(--mono); font-size: 0.75rem; white-space: pre-wrap; word-break: break-all; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; margin-top: 0.4rem; max-height: 12rem; overflow: auto; }
+
+    .downloads { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.9rem; }
+    .btn {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.55rem 0.5rem;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn:hover:not(:disabled) { border-color: var(--accent); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .row > * { flex: 1; }
+    .outopts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.9rem; }
+
+    .privacy { margin-top: 1rem; font-size: 0.8rem; color: var(--muted); }
+    .privacy p + p { margin-top: 0.5rem; }
+    .privacy strong { color: var(--text); font-weight: 600; }
+
+    footer { margin-top: 2rem; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); text-align: center; letter-spacing: 0.06em; }
+
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body spellcheck="false">
+  <header>
+    <a class="back" href="index.html">&larr; graycor.github.io</a>
+    <h1>QR code <span>generator</span></h1>
+    <p class="lede">Free, no sign-up and no tracking. Everything happens on your own device: nothing you type or upload ever leaves this page.</p>
+  </header>
+
+  <main>
+    <!-- autocomplete is off so the browser does not keep what was typed (a Wi-Fi password,
+         a contact card) in its form history once the page closes. -->
+    <form id="content-panel" class="panel" autocomplete="off">
+      <h2>1. What should the code do?</h2>
+      <div class="kinds" id="kinds" role="group" aria-label="Code type">
+        <button type="button" data-kind="url" aria-pressed="true">Website</button>
+        <button type="button" data-kind="text" aria-pressed="false">Text</button>
+        <button type="button" data-kind="email" aria-pressed="false">Email</button>
+        <button type="button" data-kind="phone" aria-pressed="false">Phone call</button>
+        <button type="button" data-kind="sms" aria-pressed="false">Text message</button>
+        <button type="button" data-kind="wifi" aria-pressed="false">Wi-Fi</button>
+        <button type="button" data-kind="vcard" aria-pressed="false">Contact card</button>
+        <button type="button" data-kind="geo" aria-pressed="false">Location</button>
+        <button type="button" data-kind="event" aria-pressed="false">Calendar event</button>
+      </div>
+
+      <fieldset data-for="url" class="grid">
+        <label>Website address
+          <input type="url" id="f-url" maxlength="2000" placeholder="example.com.au/menu" inputmode="url" />
+        </label>
+        <p class="hint">Codes made here are static: they point straight at this address and can never be redirected later by anyone, including us.</p>
+      </fieldset>
+
+      <fieldset data-for="text" class="grid" hidden>
+        <label>Text
+          <textarea id="f-text" maxlength="1200" rows="4" placeholder="Anything you like. Scanners show it as plain text."></textarea>
+        </label>
+      </fieldset>
+
+      <fieldset data-for="email" class="grid two" hidden>
+        <label class="span2">Send to
+          <input type="email" id="f-email-to" maxlength="254" placeholder="hello@example.com.au" />
+        </label>
+        <label class="span2">Subject
+          <input type="text" id="f-email-subject" maxlength="200" />
+        </label>
+        <label class="span2">Message
+          <textarea id="f-email-body" maxlength="800" rows="3"></textarea>
+        </label>
+      </fieldset>
+
+      <fieldset data-for="phone" class="grid" hidden>
+        <label>Phone number
+          <input type="tel" id="f-phone" maxlength="32" placeholder="+61 2 6123 4567" />
+        </label>
+      </fieldset>
+
+      <fieldset data-for="sms" class="grid two" hidden>
+        <label class="span2">Send to (mobile)
+          <input type="tel" id="f-sms-num" maxlength="32" placeholder="0412 345 678" />
+        </label>
+        <label class="span2">Pre-filled message
+          <textarea id="f-sms-msg" maxlength="600" rows="3" placeholder="Hi, I'd like to know more about..."></textarea>
+        </label>
+      </fieldset>
+
+      <fieldset data-for="wifi" class="grid two" hidden>
+        <label>Network name (SSID)
+          <input type="text" id="f-wifi-ssid" maxlength="32" />
+        </label>
+        <label>Security
+          <select id="f-wifi-enc">
+            <option value="WPA">WPA / WPA2 / WPA3</option>
+            <option value="WEP">WEP (outdated)</option>
+            <option value="nopass">No password</option>
+          </select>
+        </label>
+        <label class="span2" id="wifi-pass-wrap">Password
+          <input type="text" id="f-wifi-pass" maxlength="63" />
+        </label>
+        <label class="check span2"><input type="checkbox" id="f-wifi-hidden" /> Hidden network</label>
+        <p class="hint span2">Anyone who scans this code can join the network, so treat the printout like the password itself.</p>
+      </fieldset>
+
+      <fieldset data-for="vcard" class="grid two" hidden>
+        <label>First name <input type="text" id="f-vc-first" maxlength="60" /></label>
+        <label>Last name <input type="text" id="f-vc-last" maxlength="60" /></label>
+        <label>Organisation <input type="text" id="f-vc-org" maxlength="100" /></label>
+        <label>Role / title <input type="text" id="f-vc-title" maxlength="100" /></label>
+        <label>Phone <input type="tel" id="f-vc-phone" maxlength="32" /></label>
+        <label>Email <input type="email" id="f-vc-email" maxlength="254" /></label>
+        <label class="span2">Website <input type="url" id="f-vc-url" maxlength="300" /></label>
+        <label class="span2">Address <input type="text" id="f-vc-address" maxlength="200" /></label>
+        <label class="span2">Note <input type="text" id="f-vc-note" maxlength="200" /></label>
+      </fieldset>
+
+      <fieldset data-for="geo" class="grid two" hidden>
+        <label>Latitude <input type="number" id="f-geo-lat" step="any" min="-90" max="90" placeholder="-35.2809" /></label>
+        <label>Longitude <input type="number" id="f-geo-lon" step="any" min="-180" max="180" placeholder="149.1300" /></label>
+        <p class="hint span2">Scanning opens the phone's map app at this spot. To find a place's coordinates, right-click it in any map app and copy them.</p>
+      </fieldset>
+
+      <fieldset data-for="event" class="grid two" hidden>
+        <label class="span2">Event name <input type="text" id="f-ev-title" maxlength="120" /></label>
+        <label>Starts <input type="datetime-local" id="f-ev-start" /></label>
+        <label>Ends <input type="datetime-local" id="f-ev-end" /></label>
+        <label class="span2">Location <input type="text" id="f-ev-location" maxlength="200" /></label>
+        <label class="span2">Details <textarea id="f-ev-notes" maxlength="400" rows="2"></textarea></label>
+        <p class="hint span2">Times are saved in the scanning phone's own time zone.</p>
+      </fieldset>
+    </form>
+
+    <form id="design-panel" class="panel" autocomplete="off">
+      <h2>2. Make it yours</h2>
+
+      <details open>
+        <summary>Colours</summary>
+        <div class="grid two">
+          <label>Code fill
+            <select id="d-fill">
+              <option value="solid">Solid colour</option>
+              <option value="linear">Linear gradient</option>
+              <option value="radial">Radial gradient</option>
+            </select>
+          </label>
+          <div class="colour"><input type="color" id="d-fg" value="#111827" aria-label="Code colour" /><span id="d-fg2-wrap" hidden><input type="color" id="d-fg2" value="#3b5bdb" aria-label="Second gradient colour" /></span> <span class="hint">Code colour</span></div>
+          <label id="d-angle-wrap" class="span2" hidden>Gradient angle
+            <input type="range" id="d-angle" min="0" max="345" step="15" value="45" />
+          </label>
+          <div class="colour"><input type="color" id="d-bg" value="#ffffff" aria-label="Background colour" /> <span class="hint">Background</span></div>
+          <label class="check"><input type="checkbox" id="d-transparent" /> Transparent background</label>
+          <label class="check span2"><input type="checkbox" id="d-eyecustom" /> Different colours for the corner squares</label>
+          <div class="colour span2" id="d-eyecol-wrap" hidden>
+            <input type="color" id="d-eye-outer-col" value="#3b5bdb" aria-label="Corner frame colour" /> <span class="hint">Frame</span>
+            <input type="color" id="d-eye-inner-col" value="#111827" aria-label="Corner centre colour" /> <span class="hint">Centre</span>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Pattern and corners</summary>
+        <div class="grid two">
+          <label>Pattern
+            <select id="d-module">
+              <option value="square">Square</option>
+              <option value="rounded">Rounded</option>
+              <option value="fluid">Fluid</option>
+              <option value="dots">Dots</option>
+              <option value="diamond">Diamonds</option>
+            </select>
+          </label>
+          <label>Corner frames
+            <select id="d-eye-outer">
+              <option value="square">Square</option>
+              <option value="rounded">Rounded</option>
+              <option value="circle">Circle</option>
+              <option value="pointed">Pointed</option>
+            </select>
+          </label>
+          <label>Corner centres
+            <select id="d-eye-inner">
+              <option value="square">Square</option>
+              <option value="rounded">Rounded</option>
+              <option value="circle">Circle</option>
+              <option value="pointed">Pointed</option>
+            </select>
+          </label>
+        </div>
+      </details>
+
+      <details>
+        <summary>Centre icon</summary>
+        <div class="grid two">
+          <label>Icon
+            <select id="d-icon">
+              <option value="none">None</option>
+              <option value="image">Your own image...</option>
+              <option value="text">Initials</option>
+              <option value="link">Link</option>
+              <option value="globe">Globe</option>
+              <option value="wifi">Wi-Fi</option>
+              <option value="phone">Phone</option>
+              <option value="mail">Email</option>
+              <option value="chat">Message</option>
+              <option value="pin">Map pin</option>
+              <option value="calendar">Calendar</option>
+              <option value="person">Person</option>
+              <option value="heart">Heart</option>
+              <option value="star">Star</option>
+              <option value="cross">Cross</option>
+            </select>
+          </label>
+          <div class="colour" id="d-icon-col-wrap"><input type="color" id="d-icon-col" value="#111827" aria-label="Icon colour" /> <span class="hint">Icon colour</span></div>
+          <label id="d-icon-text-wrap" hidden>Initials (up to 4)
+            <input type="text" id="d-icon-text" maxlength="4" value="QR" />
+          </label>
+          <div id="d-icon-file-wrap" class="span2" hidden>
+            <label>Image (PNG, JPEG, WebP or GIF, up to 5 MB)
+              <input type="file" id="d-icon-file" accept="image/png,image/jpeg,image/webp,image/gif" />
+            </label>
+            <p class="hint" id="d-icon-file-status">The image is redrawn on this device, which also strips hidden details such as camera GPS data. It is never uploaded.</p>
+          </div>
+          <label>Icon size
+            <input type="range" id="d-icon-size" min="10" max="30" step="1" value="22" />
+          </label>
+          <label>Backing shape
+            <select id="d-plate">
+              <option value="rounded">Rounded square</option>
+              <option value="square">Square</option>
+              <option value="circle">Circle</option>
+            </select>
+          </label>
+          <label class="check span2"><input type="checkbox" id="d-clear" checked /> Clear the pattern behind the icon</label>
+          <p class="hint span2">An icon covers part of the code, so it switches to the strongest error correction automatically to stay scannable.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Frame and caption</summary>
+        <div class="grid two">
+          <label>Frame
+            <select id="d-frame">
+              <option value="none">None</option>
+              <option value="bottom">Banner below</option>
+              <option value="top">Banner above</option>
+              <option value="pill">Card with button</option>
+              <option value="outline">Outline</option>
+            </select>
+          </label>
+          <label id="d-caption-wrap" hidden>Caption
+            <input type="text" id="d-caption" maxlength="28" value="SCAN ME" />
+          </label>
+          <div class="colour" id="d-frame-col-wrap" hidden><input type="color" id="d-frame-col" value="#111827" aria-label="Frame colour" /> <span class="hint">Frame</span>
+            <input type="color" id="d-caption-col" value="#ffffff" aria-label="Caption colour" /> <span class="hint">Caption</span></div>
+          <label class="check span2"><input type="checkbox" id="d-address" checked /> Print the web address under the code</label>
+          <p class="hint span2">Showing the address lets people check where a code goes before they scan it, the single best defence against tampered or fake codes.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Scanning reliability</summary>
+        <div class="grid two">
+          <label>Error correction
+            <select id="d-ec">
+              <option value="auto">Automatic (recommended)</option>
+              <option value="L">Low (7%)</option>
+              <option value="M">Medium (15%)</option>
+              <option value="Q">Quartile (25%)</option>
+              <option value="H">High (30%)</option>
+            </select>
+          </label>
+          <label>Quiet border (<span id="d-qz-out">4</span> modules)
+            <input type="range" id="d-qz" min="1" max="8" step="1" value="4" />
+          </label>
+          <p class="hint span2">Higher error correction survives damage and dirt but makes a denser code. Scanners expect a clear border at least 4 modules wide.</p>
+        </div>
+      </details>
+    </form>
+
+    <section id="preview-panel" class="panel" aria-labelledby="preview-heading">
+      <h2 id="preview-heading">3. Preview and download</h2>
+      <div class="preview-box" id="preview-box">
+        <canvas id="preview" width="600" height="600" hidden aria-label="QR code preview" role="img"></canvas>
+        <p class="placeholder" id="placeholder">Fill in the details to see your code.</p>
+      </div>
+      <p class="meta" id="meta"></p>
+      <p class="scan" id="scan" aria-live="polite"></p>
+      <ul class="notes" id="notes" aria-live="polite"></ul>
+
+      <details class="payload" id="payload-wrap" hidden>
+        <summary>What a scanner will read</summary>
+        <pre id="payload"></pre>
+      </details>
+
+      <div class="outopts">
+        <label>Image size
+          <select id="out-size">
+            <option value="512">512 px</option>
+            <option value="1024" selected>1024 px</option>
+            <option value="2048">2048 px</option>
+            <option value="4096">4096 px (print)</option>
+          </select>
+        </label>
+        <label>File name
+          <input type="text" id="out-name" maxlength="60" placeholder="qr-code" />
+        </label>
+      </div>
+      <div class="downloads">
+        <button type="button" class="btn primary" id="dl-png" disabled>PNG</button>
+        <button type="button" class="btn" id="dl-jpg" disabled>JPEG</button>
+        <button type="button" class="btn" id="dl-svg" disabled>SVG</button>
+      </div>
+      <div class="row">
+        <button type="button" class="btn" id="copy" disabled>Copy image</button>
+        <button type="button" class="btn" id="reset">Start over</button>
+      </div>
+
+      <div class="privacy">
+        <p><strong>Private by design.</strong> The code is built by this page on your device. The page is locked so it cannot contact any server after it loads, and it saves nothing: no cookies, no storage, no history. Close the tab and it is all gone. GitHub, which hosts the page, sees the visit like any website, never what you type.</p>
+        <p><strong>Use it fairly.</strong> This tool refuses links built to disguise where they go and payment or wallet requests, and flags shortened links, lookalike addresses and direct app downloads. Please don't use it to mislead people, and always scan a code yourself before you print it.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>graycor · github pages · free to use</footer>
+
+  <script>
+"use strict";
+// Everything below runs in the visitor's browser and nowhere else. QRCORE is the pure part
+// (encoder, payload builders, safety checks, drawing) with no DOM access, so the tests in
+// tests/qr.test.mjs can load it in Node; the UI wiring at the bottom only runs in a page.
+const QRCORE = (() => {
+// QR encoder (ISO/IEC 18004 model 2, byte mode, levels L/M/Q/H, versions 1-20), ported
+// from Congregate's lib/qrcode.ts so both apps share one tested implementation.
+// --- Galois field GF(256) for Reed-Solomon ---------------------------------
+const GF_EXP = new Uint8Array(512);
+const GF_LOG = new Uint8Array(256);
+(() => {
+    let x = 1;
+    for (let i = 0; i < 255; i++) {
+        GF_EXP[i] = x;
+        GF_LOG[x] = i;
+        x <<= 1;
+        if (x & 0x100)
+            x ^= 0x11d; // primitive polynomial x^8 + x^4 + x^3 + x^2 + 1
+    }
+    for (let i = 255; i < 512; i++)
+        GF_EXP[i] = GF_EXP[i - 255];
+})();
+function gfMul(a, b) {
+    if (a === 0 || b === 0)
+        return 0;
+    return GF_EXP[GF_LOG[a] + GF_LOG[b]];
+}
+// Reed-Solomon error-correction codewords for one data block.
+function rsEncode(data, ecLen) {
+    // Generator polynomial coefficients.
+    const gen = new Array(ecLen + 1).fill(0);
+    gen[0] = 1;
+    for (let i = 0; i < ecLen; i++) {
+        for (let j = i + 1; j > 0; j--) {
+            gen[j] = gen[j - 1] ^ gfMul(gen[j], GF_EXP[i]);
+        }
+        gen[0] = gfMul(gen[0], GF_EXP[i]);
+    }
+    const res = new Array(ecLen).fill(0);
+    for (const d of data) {
+        const factor = d ^ res[0];
+        res.shift();
+        res.push(0);
+        if (factor !== 0) {
+            for (let i = 0; i < ecLen; i++)
+                res[i] ^= gfMul(gen[ecLen - 1 - i], factor);
+        }
+    }
+    return res;
+}
+// Format-information bits for each level (ISO/IEC 18004 table 12). Note these
+// are NOT in redundancy order - that is the spec's numbering, not a mistake.
+const EC_FORMAT_BITS = { L: 0b01, M: 0b00, Q: 0b11, H: 0b10 };
+// Versions 1-20 (index 0 unused). The block structure per version/level is
+// straight from ISO/IEC 18004 table 9 and cannot be derived, so it is tabulated.
+// scripts/test-qr.mjs asserts every entry against the spec's total-codeword
+// count for its version, which catches any transcription slip.
+const SPECS = [
+    null,
+    { align: [], remainderBits: 0, levels: {
+            L: { ecPerBlock: 7, groups: [[1, 19]] }, M: { ecPerBlock: 10, groups: [[1, 16]] },
+            Q: { ecPerBlock: 13, groups: [[1, 13]] }, H: { ecPerBlock: 17, groups: [[1, 9]] }
+        } },
+    { align: [6, 18], remainderBits: 7, levels: {
+            L: { ecPerBlock: 10, groups: [[1, 34]] }, M: { ecPerBlock: 16, groups: [[1, 28]] },
+            Q: { ecPerBlock: 22, groups: [[1, 22]] }, H: { ecPerBlock: 28, groups: [[1, 16]] }
+        } },
+    { align: [6, 22], remainderBits: 7, levels: {
+            L: { ecPerBlock: 15, groups: [[1, 55]] }, M: { ecPerBlock: 26, groups: [[1, 44]] },
+            Q: { ecPerBlock: 18, groups: [[2, 17]] }, H: { ecPerBlock: 22, groups: [[2, 13]] }
+        } },
+    { align: [6, 26], remainderBits: 7, levels: {
+            L: { ecPerBlock: 20, groups: [[1, 80]] }, M: { ecPerBlock: 18, groups: [[2, 32]] },
+            Q: { ecPerBlock: 26, groups: [[2, 24]] }, H: { ecPerBlock: 16, groups: [[4, 9]] }
+        } },
+    { align: [6, 30], remainderBits: 7, levels: {
+            L: { ecPerBlock: 26, groups: [[1, 108]] }, M: { ecPerBlock: 24, groups: [[2, 43]] },
+            Q: { ecPerBlock: 18, groups: [[2, 15], [2, 16]] }, H: { ecPerBlock: 22, groups: [[2, 11], [2, 12]] }
+        } },
+    { align: [6, 34], remainderBits: 7, levels: {
+            L: { ecPerBlock: 18, groups: [[2, 68]] }, M: { ecPerBlock: 16, groups: [[4, 27]] },
+            Q: { ecPerBlock: 24, groups: [[4, 19]] }, H: { ecPerBlock: 28, groups: [[4, 15]] }
+        } },
+    { align: [6, 22, 38], remainderBits: 0, levels: {
+            L: { ecPerBlock: 20, groups: [[2, 78]] }, M: { ecPerBlock: 18, groups: [[4, 31]] },
+            Q: { ecPerBlock: 18, groups: [[2, 14], [4, 15]] }, H: { ecPerBlock: 26, groups: [[4, 13], [1, 14]] }
+        } },
+    { align: [6, 24, 42], remainderBits: 0, levels: {
+            L: { ecPerBlock: 24, groups: [[2, 97]] }, M: { ecPerBlock: 22, groups: [[2, 38], [2, 39]] },
+            Q: { ecPerBlock: 22, groups: [[4, 18], [2, 19]] }, H: { ecPerBlock: 26, groups: [[4, 14], [2, 15]] }
+        } },
+    { align: [6, 26, 46], remainderBits: 0, levels: {
+            L: { ecPerBlock: 30, groups: [[2, 116]] }, M: { ecPerBlock: 22, groups: [[3, 36], [2, 37]] },
+            Q: { ecPerBlock: 20, groups: [[4, 16], [4, 17]] }, H: { ecPerBlock: 24, groups: [[4, 12], [4, 13]] }
+        } },
+    { align: [6, 28, 50], remainderBits: 0, levels: {
+            L: { ecPerBlock: 18, groups: [[2, 68], [2, 69]] }, M: { ecPerBlock: 26, groups: [[4, 43], [1, 44]] },
+            Q: { ecPerBlock: 24, groups: [[6, 19], [2, 20]] }, H: { ecPerBlock: 28, groups: [[6, 15], [2, 16]] }
+        } },
+    { align: [6, 30, 54], remainderBits: 0, levels: {
+            L: { ecPerBlock: 20, groups: [[4, 81]] }, M: { ecPerBlock: 30, groups: [[1, 50], [4, 51]] },
+            Q: { ecPerBlock: 28, groups: [[4, 22], [4, 23]] }, H: { ecPerBlock: 24, groups: [[3, 12], [8, 13]] }
+        } },
+    { align: [6, 32, 58], remainderBits: 0, levels: {
+            L: { ecPerBlock: 24, groups: [[2, 92], [2, 93]] }, M: { ecPerBlock: 22, groups: [[6, 36], [2, 37]] },
+            Q: { ecPerBlock: 26, groups: [[4, 20], [6, 21]] }, H: { ecPerBlock: 28, groups: [[7, 14], [4, 15]] }
+        } },
+    { align: [6, 34, 62], remainderBits: 0, levels: {
+            L: { ecPerBlock: 26, groups: [[4, 107]] }, M: { ecPerBlock: 22, groups: [[8, 37], [1, 38]] },
+            Q: { ecPerBlock: 24, groups: [[8, 20], [4, 21]] }, H: { ecPerBlock: 22, groups: [[12, 11], [4, 12]] }
+        } },
+    { align: [6, 26, 46, 66], remainderBits: 3, levels: {
+            L: { ecPerBlock: 30, groups: [[3, 115], [1, 116]] }, M: { ecPerBlock: 24, groups: [[4, 40], [5, 41]] },
+            Q: { ecPerBlock: 20, groups: [[11, 16], [5, 17]] }, H: { ecPerBlock: 24, groups: [[11, 12], [5, 13]] }
+        } },
+    { align: [6, 26, 48, 70], remainderBits: 3, levels: {
+            L: { ecPerBlock: 22, groups: [[5, 87], [1, 88]] }, M: { ecPerBlock: 24, groups: [[5, 41], [5, 42]] },
+            Q: { ecPerBlock: 30, groups: [[5, 24], [7, 25]] }, H: { ecPerBlock: 24, groups: [[11, 12], [7, 13]] }
+        } },
+    { align: [6, 26, 50, 74], remainderBits: 3, levels: {
+            L: { ecPerBlock: 24, groups: [[5, 98], [1, 99]] }, M: { ecPerBlock: 28, groups: [[7, 45], [3, 46]] },
+            Q: { ecPerBlock: 24, groups: [[15, 19], [2, 20]] }, H: { ecPerBlock: 30, groups: [[3, 15], [13, 16]] }
+        } },
+    { align: [6, 30, 54, 78], remainderBits: 3, levels: {
+            L: { ecPerBlock: 28, groups: [[1, 107], [5, 108]] }, M: { ecPerBlock: 28, groups: [[10, 46], [1, 47]] },
+            Q: { ecPerBlock: 28, groups: [[1, 22], [15, 23]] }, H: { ecPerBlock: 28, groups: [[2, 14], [17, 15]] }
+        } },
+    { align: [6, 30, 56, 82], remainderBits: 3, levels: {
+            L: { ecPerBlock: 30, groups: [[5, 120], [1, 121]] }, M: { ecPerBlock: 26, groups: [[9, 43], [4, 44]] },
+            Q: { ecPerBlock: 28, groups: [[17, 22], [1, 23]] }, H: { ecPerBlock: 28, groups: [[2, 14], [19, 15]] }
+        } },
+    { align: [6, 30, 58, 86], remainderBits: 3, levels: {
+            L: { ecPerBlock: 28, groups: [[3, 113], [4, 114]] }, M: { ecPerBlock: 26, groups: [[3, 44], [11, 45]] },
+            Q: { ecPerBlock: 26, groups: [[17, 21], [4, 22]] }, H: { ecPerBlock: 26, groups: [[9, 13], [16, 14]] }
+        } },
+    { align: [6, 34, 62, 90], remainderBits: 3, levels: {
+            L: { ecPerBlock: 28, groups: [[3, 107], [5, 108]] }, M: { ecPerBlock: 26, groups: [[3, 41], [13, 42]] },
+            Q: { ecPerBlock: 30, groups: [[15, 24], [5, 25]] }, H: { ecPerBlock: 28, groups: [[15, 15], [10, 16]] }
+        } },
+];
+const MAX_VERSION = 20;
+function dataCodewords(spec) {
+    return spec.groups.reduce((sum, [n, c]) => sum + n * c, 0);
+}
+/** Total codewords a version/level can carry as payload, minus the header. */
+function byteCapacity(version, level) {
+    const spec = SPECS[version];
+    if (!spec)
+        return 0;
+    const cci = version < 10 ? 8 : 16;
+    return Math.floor((dataCodewords(spec.levels[level]) * 8 - 4 - cci) / 8);
+}
+// --- Bit stream helpers -----------------------------------------------------
+class BitBuffer {
+    bits = [];
+    put(value, length) {
+        for (let i = length - 1; i >= 0; i--)
+            this.bits.push((value >> i) & 1);
+    }
+}
+// --- Encoding ---------------------------------------------------------------
+function chooseVersion(byteLen, level) {
+    for (let v = 1; v <= MAX_VERSION; v++) {
+        const cci = v < 10 ? 8 : 16; // byte-mode character count indicator width
+        const capacityBits = dataCodewords(SPECS[v].levels[level]) * 8;
+        const neededBits = 4 + cci + byteLen * 8;
+        if (neededBits <= capacityBits)
+            return v;
+    }
+    return null;
+}
+/**
+ * Pick the smallest version that fits `byteLen`, at the strongest error-correction
+ * level in `preferred` that can hold it. Returns null when the data is too long
+ * for every option, so callers can fail gracefully rather than throw.
+ */
+function chooseEncoding(byteLen, preferred) {
+    for (const level of preferred) {
+        const version = chooseVersion(byteLen, level);
+        if (version != null)
+            return { version, level };
+    }
+    return null;
+}
+function buildCodewords(bytes, version, level) {
+    const spec = SPECS[version].levels[level];
+    const totalData = dataCodewords(spec);
+    const cci = version < 10 ? 8 : 16;
+    const bb = new BitBuffer();
+    bb.put(0b0100, 4); // byte mode
+    bb.put(bytes.length, cci);
+    for (const b of bytes)
+        bb.put(b, 8);
+    // Terminator (up to 4 zero bits) then pad to a byte boundary.
+    const capacityBits = totalData * 8;
+    const terminator = Math.min(4, capacityBits - bb.bits.length);
+    bb.put(0, terminator);
+    while (bb.bits.length % 8 !== 0)
+        bb.bits.push(0);
+    // Pad bytes alternate 0xEC / 0x11 until the data capacity is filled.
+    const padBytes = [0xec, 0x11];
+    let pad = 0;
+    while (bb.bits.length < capacityBits) {
+        bb.put(padBytes[pad % 2], 8);
+        pad++;
+    }
+    // Pack bits into data codewords.
+    const data = [];
+    for (let i = 0; i < bb.bits.length; i += 8) {
+        let byte = 0;
+        for (let j = 0; j < 8; j++)
+            byte = (byte << 1) | bb.bits[i + j];
+        data.push(byte);
+    }
+    // Split into blocks, compute EC per block, then interleave.
+    const dataBlocks = [];
+    const ecBlocks = [];
+    let pos = 0;
+    for (const [numBlocks, perBlock] of spec.groups) {
+        for (let i = 0; i < numBlocks; i++) {
+            const block = data.slice(pos, pos + perBlock);
+            pos += perBlock;
+            dataBlocks.push(block);
+            ecBlocks.push(rsEncode(block, spec.ecPerBlock));
+        }
+    }
+    const result = [];
+    const maxData = Math.max(...dataBlocks.map((b) => b.length));
+    for (let i = 0; i < maxData; i++) {
+        for (const block of dataBlocks)
+            if (i < block.length)
+                result.push(block[i]);
+    }
+    for (let i = 0; i < spec.ecPerBlock; i++) {
+        for (const block of ecBlocks)
+            result.push(block[i]);
+    }
+    return result;
+}
+function newGrid(size) {
+    return Array.from({ length: size }, () => new Array(size).fill(false));
+}
+function placeFunctionPatterns(m, fn, version) {
+    const size = m.length;
+    const set = (r, c, dark) => {
+        m[r][c] = dark;
+        fn[r][c] = true;
+    };
+    // Finder patterns (with separators) at the three corners.
+    const finder = (cr, cc) => {
+        for (let dr = -4; dr <= 4; dr++) {
+            for (let dc = -4; dc <= 4; dc++) {
+                const r = cr + dr;
+                const c = cc + dc;
+                if (r < 0 || r >= size || c < 0 || c >= size)
+                    continue;
+                const dist = Math.max(Math.abs(dr), Math.abs(dc));
+                set(r, c, dist !== 2 && dist !== 4);
+            }
+        }
+    };
+    finder(3, 3);
+    finder(3, size - 4);
+    finder(size - 4, 3);
+    // Timing patterns.
+    for (let i = 0; i < size; i++) {
+        if (!fn[6][i])
+            set(6, i, i % 2 === 0);
+        if (!fn[i][6])
+            set(i, 6, i % 2 === 0);
+    }
+    // Alignment patterns.
+    const coords = SPECS[version].align;
+    for (const r of coords) {
+        for (const c of coords) {
+            if ((r === 6 && c === 6) || (r === 6 && c === size - 7) || (r === size - 7 && c === 6))
+                continue;
+            for (let dr = -2; dr <= 2; dr++) {
+                for (let dc = -2; dc <= 2; dc++) {
+                    set(r + dr, c + dc, Math.max(Math.abs(dr), Math.abs(dc)) !== 1);
+                }
+            }
+        }
+    }
+    // Reserve format-info areas (filled later) so data placement skips them.
+    for (let i = 0; i <= 8; i++) {
+        if (i !== 6) {
+            fn[8][i] = true;
+            fn[i][8] = true;
+        }
+    }
+    for (let i = 0; i < 8; i++) {
+        fn[8][size - 1 - i] = true;
+        fn[size - 1 - i][8] = true;
+    }
+    // Dark module (always set).
+    set(size - 8, 8, true);
+    // Version info reservation (version >= 7).
+    if (version >= 7) {
+        for (let i = 0; i < 18; i++) {
+            const a = size - 11 + (i % 3);
+            const b = Math.floor(i / 3);
+            fn[a][b] = true;
+            fn[b][a] = true;
+        }
+    }
+}
+function placeData(m, fn, codewords, remainderBits) {
+    const size = m.length;
+    const bits = [];
+    for (const cw of codewords)
+        for (let i = 7; i >= 0; i--)
+            bits.push((cw >> i) & 1);
+    for (let i = 0; i < remainderBits; i++)
+        bits.push(0);
+    let idx = 0;
+    for (let right = size - 1; right >= 1; right -= 2) {
+        if (right === 6)
+            right = 5; // skip the vertical timing column
+        for (let v = 0; v < size; v++) {
+            for (let j = 0; j < 2; j++) {
+                const col = right - j;
+                const upward = ((right + 1) & 2) === 0;
+                const row = upward ? size - 1 - v : v;
+                if (fn[row][col])
+                    continue;
+                m[row][col] = idx < bits.length ? bits[idx] === 1 : false;
+                idx++;
+            }
+        }
+    }
+}
+const MASKS = [
+    (r, c) => (r + c) % 2 === 0,
+    (r) => r % 2 === 0,
+    (_r, c) => c % 3 === 0,
+    (r, c) => (r + c) % 3 === 0,
+    (r, c) => (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0,
+    (r, c) => ((r * c) % 2) + ((r * c) % 3) === 0,
+    (r, c) => (((r * c) % 2) + ((r * c) % 3)) % 2 === 0,
+    (r, c) => (((r + c) % 2) + ((r * c) % 3)) % 2 === 0,
+];
+function applyMask(m, fn, mask) {
+    const f = MASKS[mask];
+    for (let r = 0; r < m.length; r++) {
+        for (let c = 0; c < m.length; c++) {
+            if (!fn[r][c] && f(r, c))
+                m[r][c] = !m[r][c];
+        }
+    }
+}
+function placeFormatBits(m, mask, level) {
+    const size = m.length;
+    const data = (EC_FORMAT_BITS[level] << 3) | mask;
+    let rem = data;
+    for (let i = 0; i < 10; i++)
+        rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+    const bits = ((data << 10) | rem) ^ 0x5412;
+    const bit = (i) => ((bits >> i) & 1) === 1;
+    // First copy: bits 0-5 down column 8, then around the corner, then bits 9-14
+    // along row 8 (positions follow ISO/IEC 18004 §8.9).
+    for (let i = 0; i <= 5; i++)
+        m[i][8] = bit(i);
+    m[7][8] = bit(6);
+    m[8][8] = bit(7);
+    m[8][7] = bit(8);
+    for (let i = 9; i < 15; i++)
+        m[8][14 - i] = bit(i);
+    // Second copy: bits 0-7 along row 8 from the right, bits 8-14 up column 8.
+    for (let i = 0; i < 8; i++)
+        m[8][size - 1 - i] = bit(i);
+    for (let i = 8; i < 15; i++)
+        m[size - 15 + i][8] = bit(i);
+    m[size - 8][8] = true; // dark module
+}
+function placeVersionBits(m, version) {
+    if (version < 7)
+        return;
+    const size = m.length;
+    let rem = version;
+    for (let i = 0; i < 12; i++)
+        rem = (rem << 1) ^ ((rem >>> 11) * 0x1f25);
+    const bits = (version << 12) | rem;
+    for (let i = 0; i < 18; i++) {
+        const dark = ((bits >> i) & 1) === 1;
+        const a = size - 11 + (i % 3);
+        const b = Math.floor(i / 3);
+        m[a][b] = dark;
+        m[b][a] = dark;
+    }
+}
+// Penalty scoring used only to pick the best mask; any valid mask still scans,
+// since the chosen mask is recorded in the format bits.
+function penalty(m) {
+    const size = m.length;
+    let score = 0;
+    const lineRun = (get) => {
+        let run = 1;
+        for (let i = 1; i < size; i++) {
+            if (get(i) === get(i - 1)) {
+                run++;
+                if (run === 5)
+                    score += 3;
+                else if (run > 5)
+                    score += 1;
+            }
+            else
+                run = 1;
+        }
+    };
+    for (let r = 0; r < size; r++)
+        lineRun((i) => m[r][i]);
+    for (let c = 0; c < size; c++)
+        lineRun((i) => m[i][c]);
+    // 2x2 blocks of one colour.
+    for (let r = 0; r < size - 1; r++) {
+        for (let c = 0; c < size - 1; c++) {
+            const v = m[r][c];
+            if (m[r][c + 1] === v && m[r + 1][c] === v && m[r + 1][c + 1] === v)
+                score += 3;
+        }
+    }
+    // Finder-like 1:1:3:1:1 patterns with 4 light modules on one side.
+    const pat = [true, false, true, true, true, false, true];
+    const matches = (get, start) => {
+        for (let k = 0; k < 7; k++)
+            if (get(start + k) !== pat[k])
+                return false;
+        const before = [start - 4, start - 1];
+        const after = [start + 7, start + 10];
+        const allLight = (lo, hi) => {
+            for (let i = lo; i <= hi; i++) {
+                if (i < 0 || i >= size)
+                    return false;
+                if (get(i))
+                    return false;
+            }
+            return true;
+        };
+        return allLight(before[0], before[1]) || allLight(after[0], after[1]);
+    };
+    for (let r = 0; r < size; r++)
+        for (let c = 0; c <= size - 7; c++)
+            if (matches((i) => m[r][i], c))
+                score += 40;
+    for (let c = 0; c < size; c++)
+        for (let r = 0; r <= size - 7; r++)
+            if (matches((i) => m[i][c], r))
+                score += 40;
+    // Dark/light balance.
+    let dark = 0;
+    for (let r = 0; r < size; r++)
+        for (let c = 0; c < size; c++)
+            if (m[r][c])
+                dark++;
+    const ratio = (dark * 100) / (size * size);
+    score += Math.floor(Math.abs(ratio - 50) / 5) * 10;
+    return score;
+}
+/**
+ * Build a QR matrix (true = dark module) for the given text at a fixed
+ * error-correction level. Returns null when the text is too long to encode at
+ * that level within versions 1-20, so callers can degrade instead of throwing.
+ */
+function qrMatrix(text, level = "M") {
+    const bytes = Array.from(new TextEncoder().encode(text));
+    const version = chooseVersion(bytes.length, level);
+    if (version == null)
+        return null;
+    const size = 17 + 4 * version;
+    const codewords = buildCodewords(bytes, version, level);
+    const baseFn = newGrid(size);
+    const baseM = newGrid(size);
+    placeFunctionPatterns(baseM, baseFn, version);
+    placeData(baseM, baseFn, codewords, SPECS[version].remainderBits);
+    let best = null;
+    let bestScore = Infinity;
+    for (let mask = 0; mask < 8; mask++) {
+        const m = baseM.map((row) => row.slice());
+        applyMask(m, baseFn, mask);
+        placeFormatBits(m, mask, level);
+        placeVersionBits(m, version);
+        const s = penalty(m);
+        if (s < bestScore) {
+            bestScore = s;
+            best = m;
+        }
+    }
+    return best;
+}
+
+function encode(text, levels) {
+  const bytes = new TextEncoder().encode(text).length;
+  const chosen = chooseEncoding(bytes, levels);
+  if (!chosen) return null;
+  return {
+    matrix: qrMatrix(text, chosen.level),
+    version: chosen.version,
+    level: chosen.level,
+    bytes,
+    capacity: byteCapacity(chosen.version, chosen.level),
+  };
+}
+
+// An icon destroys the modules under it, so it needs level H (about 30% recovery); without
+// one, M is the usual balance of density and robustness. A manual pick is honoured as is.
+function levelsFor(ec, hasIcon) {
+  if (ec === "L" || ec === "M" || ec === "Q" || ec === "H") return [ec];
+  return hasIcon ? ["H", "Q", "M", "L"] : ["M", "L"];
+}
+
+// --- Payload builders ---------------------------------------------------------
+
+// Wi-Fi payloads use ; : , " and backslash as delimiters, so those must be escaped.
+const wifiEsc = (v) => v.replace(/([\\;,:"])/g, "\\$1");
+// vCard 3.0 (RFC 2426) escapes only backslash, comma and semicolon; Congregate learned
+// that the Wi-Fi rule turns a website into "https\://..." which phones save broken.
+const vEsc = (v) => v.replace(/([\\;,])/g, "\\$1").replace(/\r?\n/g, "\\n");
+// iCalendar (RFC 5545) text escaping.
+const icsEsc = (v) => v.replace(/([\\;,])/g, "\\$1").replace(/\r?\n/g, "\\n");
+const cleanTel = (n) => n.replace(/[^\d+]/g, "");
+
+function normaliseUrl(u) {
+  const t = u.trim();
+  if (t === "") return "";
+  // A bare domain gets https:// so scanners open it as a link, not a web search. Anything
+  // that already names a scheme is left alone for the safety check to judge.
+  return /^[a-z][a-z0-9+.-]*:/i.test(t) && !/^[^:]+:\d/.test(t) ? t : `https://${t}`;
+}
+
+function icsDate(v) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(v || "");
+  return m ? `${m[1]}${m[2]}${m[3]}T${m[4]}${m[5]}00` : "";
+}
+
+function buildPayload(kind, f) {
+  switch (kind) {
+    case "url": return normaliseUrl(f.url || "");
+    case "text": return (f.text || "").trim() === "" ? "" : f.text;
+    case "email": {
+      const to = (f.emailTo || "").trim();
+      if (!to) return "";
+      const q = [];
+      if ((f.emailSubject || "").trim()) q.push(`subject=${encodeURIComponent(f.emailSubject.trim())}`);
+      if ((f.emailBody || "").trim()) q.push(`body=${encodeURIComponent(f.emailBody.trim())}`);
+      return `mailto:${to}${q.length ? `?${q.join("&")}` : ""}`;
+    }
+    case "phone": { const n = cleanTel(f.phone || ""); return n ? `tel:${n}` : ""; }
+    case "sms": {
+      const n = cleanTel(f.smsNum || "");
+      // SMSTO:<number>:<body> is the most widely understood form across scanners.
+      return n ? `SMSTO:${n}:${(f.smsMsg || "").trim()}` : "";
+    }
+    case "wifi": {
+      if (!(f.wifiSsid || "")) return "";
+      const t = f.wifiEnc === "WEP" || f.wifiEnc === "nopass" ? f.wifiEnc : "WPA";
+      const pass = t === "nopass" ? "" : `P:${wifiEsc(f.wifiPass || "")};`;
+      return `WIFI:T:${t};S:${wifiEsc(f.wifiSsid)};${pass}${f.wifiHidden ? "H:true;" : ""};`;
+    }
+    case "vcard": {
+      const first = (f.vcFirst || "").trim(), last = (f.vcLast || "").trim();
+      if (!first && !last) return "";
+      const lines = ["BEGIN:VCARD", "VERSION:3.0", `N:${vEsc(last)};${vEsc(first)};;;`, `FN:${vEsc([first, last].filter(Boolean).join(" "))}`];
+      const add = (key, v) => { if ((v || "").trim()) lines.push(`${key}:${vEsc(v.trim())}`); };
+      add("ORG", f.vcOrg);
+      add("TITLE", f.vcTitle);
+      add("TEL;TYPE=CELL", f.vcPhone);
+      add("EMAIL", f.vcEmail);
+      if ((f.vcUrl || "").trim()) lines.push(`URL:${vEsc(normaliseUrl(f.vcUrl))}`);
+      if ((f.vcAddress || "").trim()) lines.push(`ADR;TYPE=WORK:;;${vEsc(f.vcAddress.trim())};;;;`);
+      add("NOTE", f.vcNote);
+      lines.push("END:VCARD");
+      return lines.join("\n");
+    }
+    case "geo": {
+      const lat = Number(f.geoLat), lon = Number(f.geoLon);
+      if (String(f.geoLat || "").trim() === "" || String(f.geoLon || "").trim() === "") return "";
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return "";
+      return `geo:${+lat.toFixed(6)},${+lon.toFixed(6)}`;
+    }
+    case "event": {
+      const title = (f.evTitle || "").trim();
+      const start = icsDate(f.evStart);
+      if (!title || !start) return "";
+      const lines = ["BEGIN:VEVENT", `SUMMARY:${icsEsc(title)}`, `DTSTART:${start}`];
+      const end = icsDate(f.evEnd);
+      if (end) lines.push(`DTEND:${end}`);
+      if ((f.evLocation || "").trim()) lines.push(`LOCATION:${icsEsc(f.evLocation.trim())}`);
+      if ((f.evNotes || "").trim()) lines.push(`DESCRIPTION:${icsEsc(f.evNotes.trim())}`);
+      lines.push("END:VEVENT");
+      return lines.join("\n");
+    }
+  }
+  return "";
+}
+
+// --- Misuse checks --------------------------------------------------------------
+// Everything here is best effort and runs locally: there is no server to consult, so the
+// rules target the patterns that make a QR code deceptive rather than trying to judge
+// whether a site is good. "block" stops the code being made; "warn" explains a risk.
+
+// Control, zero-width and direction-override characters can make text read differently
+// from what it does (an RLO character can turn "exe.pdf" around). Tabs and newlines pass.
+const HIDDEN_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F­؜᠎​-‏‪-‮⁠-⁤⁦-⁯﻿￹-￻]/;
+
+// Schemes that run code, read local files or hop into other apps when a browser follows them.
+const DANGEROUS_SCHEMES = new Set(["javascript", "vbscript", "data", "file", "blob", "about", "filesystem",
+  "view-source", "intent", "jar", "chrome", "chrome-extension", "ms-msdt", "ms-officecmd", "search-ms",
+  "ms-search", "shell", "ms-settings"]);
+// Payment and wallet requests are refused outright: fake parking, toll and donation codes
+// that move money in one tap are the most common QR scam, and a free anonymous generator
+// should not be the easiest place to make one.
+const PAYMENT_SCHEMES = new Set(["bitcoin", "bitcoincash", "litecoin", "ethereum", "dogecoin", "monero",
+  "lightning", "solana", "tron", "ripple", "xrp", "cardano", "stellar", "tether", "usdt", "usdc", "bnb",
+  "upi", "payto", "pix", "zelle", "venmo", "cashapp", "wc", "metamask", "trust"]);
+// Shorteners and dynamic-QR redirectors hide the real destination, which is exactly what a
+// fake code needs. Legitimate users are warned rather than blocked.
+const SHORTENERS = new Set(["bit.ly", "bitly.com", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff.ly",
+  "rebrand.ly", "cutt.ly", "shorturl.at", "rb.gy", "t.ly", "tiny.cc", "s.id", "v.gd", "qrco.de", "bl.ink",
+  "short.io", "lnkd.in", "x.gd", "u.to", "clck.ru", "surl.li", "me-qr.com", "l.ead.me", "qr.io", "qrs.ly",
+  "linktr.ee", "shorte.st", "adf.ly", "tiny.one", "shorturl.gg", "urlz.fr", "2.gy", "kutt.it", "dub.sh",
+  "tr.ee", "beacons.ai", "qr1.be", "qr.codes", "q-r.to", "scan.page"]);
+// Multi-part public suffixes common enough to matter here, so "evil.com.au" is read as the
+// registrable name "evil.com.au" and not "com.au".
+const TWO_PART_SUFFIXES = new Set(["com.au", "net.au", "org.au", "edu.au", "gov.au", "asn.au", "id.au",
+  "co.uk", "org.uk", "gov.uk", "ac.uk", "co.nz", "org.nz", "govt.nz", "co.jp", "com.br", "co.za", "co.in",
+  "com.sg", "com.hk", "com.mx", "co.kr"]);
+// Commonly impersonated names and the domains that genuinely belong to them.
+const BRANDS = {
+  paypal: ["PayPal", "paypal.com", "paypal.me"], apple: ["Apple", "apple.com", "icloud.com"],
+  icloud: ["iCloud", "icloud.com", "apple.com"],
+  microsoft: ["Microsoft", "microsoft.com", "live.com", "office.com", "microsoftonline.com", "outlook.com", "microsoft365.com"],
+  office365: ["Microsoft", "office.com", "microsoft.com"], outlook: ["Outlook", "outlook.com", "live.com", "office.com"],
+  google: ["Google", "google.com", "google.com.au", "g.co", "goo.gl"], gmail: ["Gmail", "google.com", "gmail.com"],
+  amazon: ["Amazon", "amazon.com", "amazon.com.au", "a.co"], netflix: ["Netflix", "netflix.com"],
+  facebook: ["Facebook", "facebook.com", "fb.com", "fb.me"], instagram: ["Instagram", "instagram.com"],
+  whatsapp: ["WhatsApp", "whatsapp.com", "wa.me"], linkedin: ["LinkedIn", "linkedin.com", "lnkd.in"],
+  auspost: ["Australia Post", "auspost.com.au"], mygov: ["myGov", "my.gov.au"], ato: ["the ATO", "ato.gov.au"],
+  medicare: ["Medicare", "servicesaustralia.gov.au", "my.gov.au"], centrelink: ["Centrelink", "servicesaustralia.gov.au", "my.gov.au"],
+  servicesaustralia: ["Services Australia", "servicesaustralia.gov.au"],
+  commbank: ["CommBank", "commbank.com.au", "commonwealthbank.com.au"], netbank: ["CommBank", "commbank.com.au"],
+  westpac: ["Westpac", "westpac.com.au"], anz: ["ANZ", "anz.com.au", "anz.com"], nab: ["NAB", "nab.com.au"],
+  stgeorge: ["St.George", "stgeorge.com.au"], linkt: ["Linkt", "linkt.com.au"], telstra: ["Telstra", "telstra.com.au", "telstra.com"],
+  optus: ["Optus", "optus.com.au"], dhl: ["DHL", "dhl.com", "dhl.com.au"], fedex: ["FedEx", "fedex.com"],
+  ups: ["UPS", "ups.com"], usps: ["USPS", "usps.com"], ebay: ["eBay", "ebay.com", "ebay.com.au"],
+  coinbase: ["Coinbase", "coinbase.com"], binance: ["Binance", "binance.com"],
+  steam: ["Steam", "steampowered.com", "steamcommunity.com"], docusign: ["DocuSign", "docusign.com", "docusign.net"],
+  dropbox: ["Dropbox", "dropbox.com"], adobe: ["Adobe", "adobe.com"], myki: ["myki", "ptv.vic.gov.au"],
+  opal: ["Opal", "opal.com.au", "transportnsw.info"], transportnsw: ["Transport for NSW", "transportnsw.info", "nsw.gov.au"],
+};
+// App or program downloads. Sideloaded Android apps in particular are a favourite payload.
+const DOWNLOAD_EXT = /\.(apk|aab|xapk|apks|exe|msi|scr|bat|cmd|vbs|vbe|js|jse|wsf|ps1|jar|dmg|pkg|ipa|appx|msix|appinstaller|lnk|hta|iso|img|reg|mobileconfig)$/i;
+
+function registrable(host) {
+  const labels = host.split(".");
+  if (labels.length <= 2) return host;
+  const last2 = labels.slice(-2).join(".");
+  return TWO_PART_SUFFIXES.has(last2) ? labels.slice(-3).join(".") : last2;
+}
+
+// Undo the usual digit-for-letter swaps (paypa1, g00gle) before looking for brand names.
+const unleet = (s) => s.replace(/0/g, "o").replace(/1/g, "l").replace(/3/g, "e").replace(/4/g, "a").replace(/5/g, "s").replace(/7/g, "t").replace(/rn/g, "m").replace(/vv/g, "w");
+
+function brandMismatch(host) {
+  const reg = registrable(host);
+  const labels = host.split(".");
+  // The public suffix itself ("com", "com.au") never names a brand.
+  const suffixLen = TWO_PART_SUFFIXES.has(labels.slice(-2).join(".")) ? 2 : 1;
+  const parts = labels.slice(0, -suffixLen).flatMap((l) => [l, ...l.split("-")]).map(unleet);
+  for (const [token, [name, ...owned]] of Object.entries(BRANDS)) {
+    // Short names (ato, anz, ups) only count as a whole label or hyphen part, so "tomato"
+    // is not taken for the ATO; longer names count anywhere in a label.
+    const hit = parts.some((p) => (token.length <= 4 ? p === token : p.includes(token)));
+    if (!hit) continue;
+    if (owned.some((d) => reg === d || host === d || host.endsWith(`.${d}`))) return null;
+    return name;
+  }
+  return null;
+}
+
+function isPrivateIp(h) {
+  const m = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(h);
+  if (!m) return false;
+  const [a, b] = [Number(m[1]), Number(m[2])];
+  return a === 10 || a === 127 || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31) || (a === 169 && b === 254);
+}
+
+function checkUrl(raw, r, prefix = "") {
+  const text = raw.trim();
+  const p = prefix;
+  const sm = /^([a-z][a-z0-9+.-]*):/i.exec(text);
+  const scheme = sm ? sm[1].toLowerCase() : "";
+  if (scheme !== "http" && scheme !== "https") {
+    if (DANGEROUS_SCHEMES.has(scheme)) r.block(`${p}"${scheme}:" links can run code or open local files, so they are not allowed.`);
+    else if (PAYMENT_SCHEMES.has(scheme)) r.block(`${p}Payment and wallet requests are not supported. Fake payment codes are the most common QR scam.`);
+    else r.block(`${p}Only web links (https://) can go here. Use the Email, Phone or Text message types for those.`);
+    return;
+  }
+  let url;
+  try { url = new URL(text); } catch { r.block(`${p}That does not look like a valid web address.`); return; }
+  if (url.username || url.password) {
+    r.block(`${p}The address has a name before an @ sign. Browsers skip to the part after the @, so "https://mybank.com@evil.example" really goes to evil.example. This trick is not allowed.`);
+    return;
+  }
+  const host = url.hostname.toLowerCase();
+  if (!host) { r.block(`${p}The address has no site name.`); return; }
+
+  // Look at the host exactly as typed, before the URL parser turns it into punycode.
+  const hm = /^[a-z][a-z0-9+.-]*:\/\/(?:[^@/?#]*@)?(\[[^\]]*\]|[^:/?#]*)/i.exec(text);
+  const typedHost = hm ? hm[1] : "";
+  if (/[^\x00-\x7f]/.test(typedHost)) {
+    const mixed = typedHost.split(".").some((label) =>
+      /\p{Script=Latin}/u.test(label) && /[\p{Script=Cyrillic}\p{Script=Greek}\p{Script=Armenian}\p{Script=Cherokee}]/u.test(label));
+    if (mixed) {
+      r.block(`${p}The site name mixes alphabets (for example a Cyrillic "а" among Latin letters). That is how lookalike addresses imitate real ones, so it is not allowed.`);
+      return;
+    }
+    r.warn(`${p}The site name uses international characters. Many phones will show it as "${host}", so check that is what you expect.`);
+  } else if (host.split(".").some((l) => l.startsWith("xn--"))) {
+    r.warn(`${p}"${host}" is an encoded international name. Make sure you know which site it really is.`);
+  }
+
+  if (url.protocol === "http:") r.warn(`${p}This link is not encrypted (http). Use https:// if the site supports it.`);
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(host) || host.startsWith("[")) {
+    if (isPrivateIp(host)) r.warn(`${p}This is a private network address, so the code only works on your own network.`);
+    else r.warn(`${p}The link uses a bare IP address instead of a site name, which people cannot check and scammers prefer.`);
+  } else if (!host.includes(".") || /\.(local|lan|internal|home\.arpa|localhost)$/.test(host)) {
+    r.warn(`${p}"${host}" is a local name, so the code only works on your own network.`);
+  }
+  if (url.port) r.warn(`${p}The link uses an unusual port (${url.port}).`);
+  if (/\.(zip|mov)$/.test(host)) r.warn(`${p}".${host.split(".").pop()}" sites are easily mistaken for file names. Double-check this is a website you trust.`);
+
+  const reg = registrable(host);
+  if (SHORTENERS.has(host) || SHORTENERS.has(reg)) {
+    r.warn(`${p}${host} is a link shortener or redirect service. It hides where the code really goes and the destination can be changed later. Use the full address if you can.`);
+  }
+  const brand = brandMismatch(host);
+  if (brand) r.warn(`${p}The address mentions ${brand} but is not one of ${brand}'s own sites (it belongs to ${reg}). If you are not ${brand}, people may be misled.`);
+
+  for (const [, v] of url.searchParams) {
+    if (/^(https?:)?\/\//i.test(v.trim())) {
+      r.warn(`${p}The link passes along another address, so it may forward people to a different site.`);
+      break;
+    }
+  }
+  if (DOWNLOAD_EXT.test(url.pathname)) {
+    r.warn(`${p}The link downloads an app or program file directly. Phones warn about these for good reason; link to an official app store page instead if you can.`);
+  }
+  if (text.length > 300) r.warn(`${p}Long links make dense codes that are harder to scan.`);
+}
+
+// Find web links inside free text (a message body, a note) so they get the same checks.
+function urlsIn(text) {
+  const out = [];
+  const re = /\b((?:https?:\/\/|www\.)[^\s<>"']+)/gi;
+  let m;
+  while ((m = re.exec(text))) out.push(normaliseUrl(m[1].replace(/[),.;!?]+$/, "")));
+  return out;
+}
+
+function checkPhone(n, r, label) {
+  const d = cleanTel(n);
+  if (d.replace(/\D/g, "").length < 3) r.block(`${label} needs a phone number.`);
+  // Australian 19xx numbers are premium rate: a classic way to bill people who call.
+  if (/^(\+?61)?19\d/.test(d) || /^19\d/.test(d)) r.warn(`${label} looks like a premium-rate (19xx) number, which costs callers extra.`);
+}
+
+const EMAIL_RE = /^[^\s@<>()"',;:]+@[^\s@<>()"',;:]+\.[^\s@<>()"',;:]{2,}$/;
+
+function assess(kind, f) {
+  const blocks = [], warns = [];
+  const r = {
+    block: (m) => { if (!blocks.includes(m)) blocks.push(m); },
+    warn: (m) => { if (!warns.includes(m)) warns.push(m); },
+  };
+  for (const v of Object.values(f)) {
+    if (typeof v === "string" && HIDDEN_CHARS.test(v)) {
+      r.block("Hidden or direction-reversing characters were found. They can disguise what a code really does, so they are not allowed. Retype the text instead of pasting it.");
+      break;
+    }
+  }
+  const textLinks = (s, label) => { for (const u of urlsIn(s || "")) checkUrl(u, r, `${label}: `); };
+  switch (kind) {
+    case "url":
+      if ((f.url || "").trim()) checkUrl(normaliseUrl(f.url), r);
+      break;
+    case "text": {
+      const t = (f.text || "").trim();
+      const sm = /^([a-z][a-z0-9+.-]*):/i.exec(t);
+      const scheme = sm ? sm[1].toLowerCase() : "";
+      if (DANGEROUS_SCHEMES.has(scheme)) r.block(`"${scheme}:" content can run code or open local files, so it is not allowed.`);
+      else if (PAYMENT_SCHEMES.has(scheme)) r.block("Payment and wallet requests are not supported. Fake payment codes are the most common QR scam.");
+      else if (scheme && !/^(https?|mailto|tel|sms|smsto|geo|wifi|begin|mecard)$/.test(scheme) && /^[a-z][a-z0-9+.-]*:\S/i.test(t)) {
+        r.warn(`Phones may open this in another app ("${scheme}:"). Make sure that is what you want.`);
+      }
+      textLinks(t, "Link in text");
+      break;
+    }
+    case "email":
+      if ((f.emailTo || "").trim() && !EMAIL_RE.test(f.emailTo.trim())) r.block("That email address does not look right.");
+      textLinks(f.emailBody, "Link in message");
+      textLinks(f.emailSubject, "Link in subject");
+      break;
+    case "phone":
+      if ((f.phone || "").trim()) checkPhone(f.phone, r, "The number");
+      break;
+    case "sms":
+      if ((f.smsNum || "").trim()) checkPhone(f.smsNum, r, "The number");
+      textLinks(f.smsMsg, "Link in message");
+      break;
+    case "vcard":
+      if ((f.vcEmail || "").trim() && !EMAIL_RE.test(f.vcEmail.trim())) r.block("The contact's email address does not look right.");
+      if ((f.vcUrl || "").trim()) checkUrl(normaliseUrl(f.vcUrl), r, "Contact website: ");
+      textLinks(f.vcNote, "Link in note");
+      break;
+    case "geo": {
+      const has = String(f.geoLat || "").trim() !== "" && String(f.geoLon || "").trim() !== "";
+      const lat = Number(f.geoLat), lon = Number(f.geoLon);
+      if (has && !(Math.abs(lat) <= 90 && Math.abs(lon) <= 180)) r.block("Latitude must be between -90 and 90 and longitude between -180 and 180.");
+      break;
+    }
+    case "event":
+      if (f.evStart && f.evEnd && f.evEnd < f.evStart) r.warn("The event ends before it starts.");
+      textLinks(f.evNotes, "Link in details");
+      textLinks(f.evLocation, "Link in location");
+      break;
+    case "wifi":
+      if (f.wifiEnc === "WEP") r.warn("WEP is broken and can be cracked in minutes. Switch the network to WPA2 or WPA3 if you can.");
+      break;
+  }
+  return { blocks, warns };
+}
+
+// --- Colour helpers -------------------------------------------------------------
+
+const HEX = /^#[0-9a-f]{6}$/i;
+const safeColour = (c, fallback) => (HEX.test(c || "") ? c.toLowerCase() : fallback);
+
+function luminance(hex) {
+  const ch = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+}
+function contrast(a, b) {
+  const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+}
+
+// Design warnings: the styling choices most likely to stop a code scanning.
+function designNotes(o) {
+  const warns = [];
+  if (o.transparent) {
+    warns.push("With a transparent background the code takes on whatever it is placed over. Only put it on a plain, light surface.");
+  } else {
+    const darks = [["The code colour", o.fg]];
+    if (o.fill !== "solid") darks.push(["The second gradient colour", o.fg2]);
+    if (o.eyeCustom) darks.push(["The corner frame colour", o.eyeOuterCol], ["The corner centre colour", o.eyeInnerCol]);
+    for (const [name, c] of darks) {
+      const ratio = contrast(c, o.bg);
+      if (ratio < 3) warns.push(`${name} is too close to the background (${ratio.toFixed(1)}:1). Aim for at least 4:1 or many phones will not read it.`);
+      else if (luminance(c) > luminance(o.bg)) warns.push(`${name} is lighter than the background. Light-on-dark codes fail on many older phones; dark on light is safest.`);
+    }
+  }
+  // Measured: a CNN reader (WeChat's, like modern phone cameras) read every corner style,
+  // but OpenCV's classic detector and jsQR missed most non-square corners.
+  if (o.eyeOuter !== "square" || o.eyeInner !== "square") warns.push("Styled corner squares read fine on modern phones but can trip up older scanner apps. Test with a few phones before printing.");
+  if (o.qz < 4) warns.push("The quiet border is under 4 modules. Scanners rely on that clear space, especially on busy backgrounds.");
+  if (o.icon !== "none") {
+    if (o.iconSize > 0.26) warns.push("A large icon covers a lot of the code. Test it on a few phones before printing.");
+    if (o.ec !== "auto" && o.ec !== "H") warns.push("With a centre icon, High error correction is safest. Lower levels may not recover the covered part.");
+  }
+  return warns;
+}
+
+// --- Drawing --------------------------------------------------------------------
+// A scene is a list of shapes in module units. The same scene becomes the SVG download and
+// is painted onto canvas for the preview and the PNG/JPEG downloads, so every format
+// matches and nothing goes through an SVG-to-canvas round trip.
+
+const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Arial, sans-serif";
+const n3 = (v) => +v.toFixed(3);
+
+// Rounded rectangle path with per-corner radii [top-left, top-right, bottom-right, bottom-left].
+function rrPath(x, y, w, h, rad) {
+  const [a, b, c, d] = typeof rad === "number" ? [rad, rad, rad, rad] : rad;
+  let s = `M${n3(x + a)} ${n3(y)}H${n3(x + w - b)}`;
+  if (b) s += `A${n3(b)} ${n3(b)} 0 0 1 ${n3(x + w)} ${n3(y + b)}`;
+  s += `V${n3(y + h - c)}`;
+  if (c) s += `A${n3(c)} ${n3(c)} 0 0 1 ${n3(x + w - c)} ${n3(y + h)}`;
+  s += `H${n3(x + d)}`;
+  if (d) s += `A${n3(d)} ${n3(d)} 0 0 1 ${n3(x)} ${n3(y + h - d)}`;
+  s += `V${n3(y + a)}`;
+  if (a) s += `A${n3(a)} ${n3(a)} 0 0 1 ${n3(x + a)} ${n3(y)}`;
+  return `${s}Z`;
+}
+function circlePath(cx, cy, r) {
+  return `M${n3(cx - r)} ${n3(cy)}A${n3(r)} ${n3(r)} 0 1 0 ${n3(cx + r)} ${n3(cy)}A${n3(r)} ${n3(r)} 0 1 0 ${n3(cx - r)} ${n3(cy)}Z`;
+}
+function diamondPath(x, y, s) {
+  const h = s / 2;
+  return `M${n3(x + h)} ${n3(y)}L${n3(x + s)} ${n3(y + h)}L${n3(x + h)} ${n3(y + s)}L${n3(x)} ${n3(y + h)}Z`;
+}
+
+// One finder shape. `inward` is the corner pointing at the middle of the code, which the
+// "pointed" style leaves sharp.
+function eyeShape(style, x, y, s, inward) {
+  switch (style) {
+    case "circle": return circlePath(x + s / 2, y + s / 2, s / 2);
+    case "rounded": return rrPath(x, y, s, s, s * 0.3);
+    case "pointed": {
+      // Any rounder and the corner no longer measures 1:1:3:1:1 along the diagonal,
+      // which scanners cross-check, and the code stops reading.
+      const r = [s * 0.3, s * 0.3, s * 0.3, s * 0.3];
+      r[inward] = 0;
+      return rrPath(x, y, s, s, r);
+    }
+    default: return rrPath(x, y, s, s, 0);
+  }
+}
+
+// Built-in centre icons on a 24-unit grid. Stroke icons use round caps; a zero-length
+// stroke ("h.01") draws a dot.
+function starPath() {
+  let d = "";
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 ? 4.6 : 10.5;
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    d += `${i ? "L" : "M"}${n3(12 + r * Math.cos(a))} ${n3(12.6 + r * Math.sin(a))}`;
+  }
+  return `${d}Z`;
+}
+const ICONS = {
+  link: { mode: "stroke", d: "M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2" },
+  globe: { mode: "stroke", d: "M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0M3 12h18M12 3c-3 3-3 15 0 18M12 3c3 3 3 15 0 18" },
+  wifi: { mode: "stroke", d: "M2.5 9a14 14 0 0 1 19 0M5.8 12.5a9.5 9.5 0 0 1 12.4 0M9 16a4.6 4.6 0 0 1 6 0M12 19.6h.01" },
+  phone: { mode: "stroke", d: "M8 2.5h8a2 2 0 0 1 2 2v15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-15a2 2 0 0 1 2-2zM11 18.5h2" },
+  mail: { mode: "stroke", d: "M4 5.5h16a1.5 1.5 0 0 1 1.5 1.5v10a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 17V7A1.5 1.5 0 0 1 4 5.5zM3 6.5l9 7 9-7" },
+  chat: { mode: "stroke", d: "M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM8 10.5h.01M12 10.5h.01M16 10.5h.01" },
+  pin: { mode: "stroke", d: "M12 21.5s-7-6.4-7-12a7 7 0 0 1 14 0c0 5.6-7 12-7 12zM14.6 9.5a2.6 2.6 0 1 1-5.2 0a2.6 2.6 0 1 1 5.2 0" },
+  calendar: { mode: "stroke", d: "M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v13.5a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 5 4.5zM3.5 9.5h17M8 2.5v4M16 2.5v4M8 13.5h.01M12 13.5h.01M16 13.5h.01M8 17h.01M12 17h.01" },
+  person: { mode: "stroke", d: "M15.8 7.5a3.8 3.8 0 1 1-7.6 0a3.8 3.8 0 1 1 7.6 0M4.5 21a7.5 7.5 0 0 1 15 0" },
+  heart: { mode: "fill", d: "M12 21s-9-5.6-9-12.2A5 5 0 0 1 12 5.9a5 5 0 0 1 9 2.9C21 15.4 12 21 12 21z" },
+  star: { mode: "fill", d: starPath() },
+  // A Latin cross: the crossbar sits in the upper third, so it does not read as a plus sign.
+  cross: { mode: "fill", d: `${rrPath(10.1, 1.9, 3.8, 20.2, 1)}${rrPath(5.3, 6.6, 13.4, 3.8, 1)}` },
+};
+
+const isFinder = (r, c, n) => (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
+
+// o: matrix, qz, module, eyeOuter, eyeInner, fill, fg, fg2, angle, bg, transparent,
+// eyeCustom, eyeOuterCol, eyeInnerCol, icon, iconText, iconImage {src, w, h, source},
+// iconCol, iconSize (fraction of code width), plate, clear, frame, caption, frameCol,
+// captionCol, address, measure(text, px) -> width.
+function buildScene(o) {
+  const m = o.matrix;
+  const n = m.length;
+  const qz = o.qz;
+  const D = n + qz * 2;
+  const items = [];
+  const bg = o.bg;
+  const page = o.transparent ? null : bg;
+  const measure = o.measure || ((t, px) => t.length * px * 0.62);
+  const fitText = (text, px, maxW) => Math.min(px, (px * maxW) / Math.max(measure(text, px), 0.001));
+
+  const address = (o.address || "").trim();
+  const addrH = address ? D * 0.09 : 0;
+
+  // Frame layout: work out the outer size and where the code's light square sits.
+  let W = D, H = D, sx = 0, sy = 0;
+  const caption = (o.caption || "").trim();
+  const frameItems = [];
+  if (o.frame === "bottom" || o.frame === "top") {
+    const fb = Math.max(1.5, D * 0.05);
+    const cap = D * 0.2;
+    W = D + fb * 2;
+    H = D + fb + cap;
+    sx = fb;
+    sy = o.frame === "top" ? cap : fb;
+    frameItems.push({ t: "path", d: rrPath(0, 0, W, H, D * 0.06), fill: o.frameCol });
+    if (page == null) frameItems.push({ t: "clear", x: sx, y: sy, w: D, h: D });
+    if (caption) {
+      const cy = o.frame === "top" ? cap * 0.52 : sy + D + cap * 0.48;
+      const px = fitText(caption, cap * 0.5, W * 0.86);
+      frameItems.push({ t: "text", x: W / 2, y: cy, text: caption, size: px, weight: 800, fill: o.captionCol, spacing: px * 0.06 });
+    }
+  } else if (o.frame === "pill") {
+    const gap = D * 0.05, pillH = D * 0.15, sw = D * 0.012;
+    W = D;
+    H = D + pillH + gap * 2;
+    // The card encloses the printed address too, so it reads as one sticker.
+    const cardH = H + addrH;
+    if (page) frameItems.push({ t: "path", d: rrPath(sw / 2, sw / 2, W - sw, cardH - sw, D * 0.06), fill: page });
+    frameItems.push({ t: "stroke", d: rrPath(sw / 2, sw / 2, W - sw, cardH - sw, D * 0.06), stroke: o.frameCol, width: sw });
+    frameItems.push({ t: "path", d: rrPath(D * 0.1, D + gap * 0.4, D * 0.8, pillH, pillH / 2), fill: o.frameCol });
+    if (caption) {
+      const px = fitText(caption, pillH * 0.5, D * 0.7);
+      frameItems.push({ t: "text", x: W / 2, y: D + gap * 0.4 + pillH / 2, text: caption, size: px, weight: 800, fill: o.captionCol, spacing: px * 0.06 });
+    }
+  } else if (o.frame === "outline") {
+    const sw = Math.max(0.8, D * 0.025);
+    const capH = caption ? D * 0.14 : 0;
+    W = D + sw * 2;
+    H = D + sw * 2 + capH;
+    sx = sw;
+    sy = sw;
+    frameItems.push({ t: "stroke", d: rrPath(sw / 2, sw / 2, W - sw, D + sw, D * 0.06), stroke: o.frameCol, width: sw });
+    if (caption) {
+      const px = fitText(caption, capH * 0.55, W * 0.9);
+      frameItems.push({ t: "text", x: W / 2, y: D + sw * 2 + capH * 0.45, text: caption, size: px, weight: 800, fill: o.frameCol, spacing: px * 0.06 });
+    }
+  }
+  H += addrH;
+
+  if (page) items.push({ t: "path", d: rrPath(0, 0, W, H, 0), fill: page });
+  items.push(...frameItems);
+  if (page && o.frame !== "none" && o.frame !== "pill") items.push({ t: "path", d: rrPath(sx, sy, D, D, 0), fill: page });
+
+  const X0 = sx + qz, Y0 = sy + qz;
+
+  // Paint for the code: a solid colour or a gradient across the code area.
+  let paint = o.fg;
+  if (o.fill === "linear" || o.fill === "radial") {
+    paint = { type: o.fill, c1: o.fg, c2: o.fg2, angle: o.angle || 0, x: X0, y: Y0, w: n, h: n };
+  }
+  const outerPaint = o.eyeCustom ? o.eyeOuterCol : paint;
+  const innerPaint = o.eyeCustom ? o.eyeInnerCol : paint;
+
+  // Centre icon footprint, in module coordinates relative to the code's top-left.
+  let plate = null;
+  if (o.icon !== "none" && (o.icon !== "image" || o.iconImage)) {
+    const L = n * o.iconSize;
+    const pad = L * 0.1;
+    plate = { cx: n / 2, cy: n / 2, half: L / 2 + pad, L };
+  }
+  const covered = (r, c) => {
+    if (!plate || !o.clear) return false;
+    const x = c + 0.5, y = r + 0.5;
+    if (o.plate === "circle") return Math.hypot(x - plate.cx, y - plate.cy) < plate.half + 0.5;
+    return Math.abs(x - plate.cx) < plate.half + 0.5 && Math.abs(y - plate.cy) < plate.half + 0.5;
+  };
+
+  // Alignment patterns stay solid squares whatever the pattern style: scanners lock onto
+  // them to correct perspective, and a ring of loose dots is much harder to find.
+  const align = (SPECS[(n - 17) / 4] || { align: [] }).align;
+  const inAlign = (r, c) => align.some((ar) => Math.abs(r - ar) <= 2 && align.some((ac) => Math.abs(c - ac) <= 2 && !isFinder(ar, ac, n)));
+
+  const dark = (r, c) => r >= 0 && c >= 0 && r < n && c < n && m[r][c] && !isFinder(r, c, n) && !covered(r, c);
+  let d = "";
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      if (!dark(r, c)) continue;
+      const x = X0 + c, y = Y0 + r;
+      if (o.module !== "square" && inAlign(r, c)) { d += `M${x} ${y}h1v1h-1z`; continue; }
+      switch (o.module) {
+        case "dots": d += circlePath(x + 0.5, y + 0.5, 0.48); break;
+        case "rounded": d += rrPath(x + 0.04, y + 0.04, 0.92, 0.92, 0.3); break;
+        case "diamond": d += diamondPath(x - 0.04, y - 0.04, 1.08); break;
+        case "fluid": {
+          // Round a corner only where neither neighbour touching it is dark, so runs of
+          // modules join into smooth blobs.
+          const up = dark(r - 1, c), dn = dark(r + 1, c), lf = dark(r, c - 1), rt = dark(r, c + 1);
+          d += rrPath(x, y, 1, 1, [!up && !lf ? 0.5 : 0, !up && !rt ? 0.5 : 0, !dn && !rt ? 0.5 : 0, !dn && !lf ? 0.5 : 0]);
+          break;
+        }
+        default: d += `M${x} ${y}h1v1h-1z`;
+      }
+    }
+  }
+  if (d) items.push({ t: "path", d, fill: paint, crisp: o.module === "square" });
+
+  // Finder patterns: an outer ring (7x7 less 5x5) and a 3x3 centre.
+  const eyes = [[0, 0, 2], [0, n - 7, 3], [n - 7, 0, 1]];
+  for (const [r0, c0, inward] of eyes) {
+    const x = X0 + c0, y = Y0 + r0;
+    const outerStyle = o.eyeOuter;
+    let ring = eyeShape(outerStyle, x, y, 7, inward);
+    // The hole's corners are one module tighter than the outside's so the ring stays even.
+    if (outerStyle === "rounded") ring += rrPath(x + 1, y + 1, 5, 5, 1.1);
+    else if (outerStyle === "pointed") { const rr = [1.1, 1.1, 1.1, 1.1]; rr[inward] = 0; ring += rrPath(x + 1, y + 1, 5, 5, rr); }
+    else ring += eyeShape(outerStyle, x + 1, y + 1, 5, inward);
+    items.push({ t: "path", d: ring, fill: outerPaint, rule: "evenodd", crisp: outerStyle === "square" });
+    items.push({ t: "path", d: eyeShape(o.eyeInner, x + 2, y + 2, 3, inward), fill: innerPaint, crisp: o.eyeInner === "square" });
+  }
+
+  // Centre icon on its backing plate.
+  if (plate) {
+    const pcx = X0 + plate.cx, pcy = Y0 + plate.cy, h = plate.half;
+    const plateD = o.plate === "circle" ? circlePath(pcx, pcy, h)
+      : rrPath(pcx - h, pcy - h, h * 2, h * 2, o.plate === "rounded" ? h * 0.35 : 0);
+    if (!(o.transparent && o.clear)) items.push({ t: "path", d: plateD, fill: bg });
+    // A circle holds a smaller square than a square does, so shrink the art to fit.
+    const art = plate.L * (o.plate === "circle" ? 0.82 : 0.92);
+    if (o.icon === "image") {
+      const img = o.iconImage;
+      const k = Math.min(art / img.w, art / img.h);
+      const w = img.w * k, hh = img.h * k;
+      items.push({ t: "image", x: pcx - w / 2, y: pcy - hh / 2, w, h: hh, src: img.src, source: img.source });
+    } else if (o.icon === "text") {
+      const t = (o.iconText || "").trim().slice(0, 4) || "QR";
+      const px = fitText(t, art * 0.55, art * 0.92);
+      items.push({ t: "text", x: pcx, y: pcy, text: t, size: px, weight: 800, fill: o.iconCol, spacing: 0 });
+    } else if (ICONS[o.icon]) {
+      const ic = ICONS[o.icon];
+      const s = (art * 0.8) / 24;
+      items.push({ t: "icon", d: ic.d, mode: ic.mode, fill: o.iconCol, tf: { x: pcx - 12 * s, y: pcy - 12 * s, s }, width: 2.2 });
+    }
+  }
+
+  if (address) {
+    const px = fitText(address, D * 0.048, W * 0.92);
+    const fill = o.frame === "none" ? o.fg : o.frameCol;
+    items.push({ t: "text", x: W / 2, y: H - addrH * 0.5, text: address, size: px, weight: 600, fill, spacing: 0 });
+  }
+
+  return { w: W, h: H, items };
+}
+
+const escapeXml = (s) => String(s).replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function gradientEnds(p) {
+  const a = (p.angle * Math.PI) / 180;
+  const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
+  const half = (Math.abs(p.w * Math.cos(a)) + Math.abs(p.h * Math.sin(a))) / 2;
+  return [cx - Math.cos(a) * half, cy - Math.sin(a) * half, cx + Math.cos(a) * half, cy + Math.sin(a) * half];
+}
+
+function toSvg(scene, pixelWidth) {
+  const defs = [];
+  const gradIds = new Map();
+  const paintAttr = (p) => {
+    if (typeof p === "string") return escapeXml(p);
+    // Modules and corners share one gradient object; define it once.
+    if (gradIds.has(p)) return `url(#${gradIds.get(p)})`;
+    const id = `g${gradIds.size}`;
+    gradIds.set(p, id);
+    if (p.type === "radial") {
+      defs.push(`<radialGradient id="${id}" gradientUnits="userSpaceOnUse" cx="${n3(p.x + p.w / 2)}" cy="${n3(p.y + p.h / 2)}" r="${n3(p.w * 0.72)}"><stop offset="0" stop-color="${escapeXml(p.c1)}"/><stop offset="1" stop-color="${escapeXml(p.c2)}"/></radialGradient>`);
+    } else {
+      const [x1, y1, x2, y2] = gradientEnds(p);
+      defs.push(`<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${n3(x1)}" y1="${n3(y1)}" x2="${n3(x2)}" y2="${n3(y2)}"><stop offset="0" stop-color="${escapeXml(p.c1)}"/><stop offset="1" stop-color="${escapeXml(p.c2)}"/></linearGradient>`);
+    }
+    return `url(#${id})`;
+  };
+  let body = "";
+  for (const it of scene.items) {
+    if (it.t === "path") {
+      body += `<path d="${it.d}" fill="${paintAttr(it.fill)}"${it.rule ? ` fill-rule="${it.rule}"` : ""}${it.crisp ? ' shape-rendering="crispEdges"' : ""}/>`;
+    } else if (it.t === "stroke") {
+      body += `<path d="${it.d}" fill="none" stroke="${escapeXml(it.stroke)}" stroke-width="${n3(it.width)}"/>`;
+    } else if (it.t === "clear") {
+      // A transparent framed code punches its light square out of everything drawn so far.
+      defs.push(`<mask id="hole"><rect width="${n3(scene.w)}" height="${n3(scene.h)}" fill="#fff"/><rect x="${n3(it.x)}" y="${n3(it.y)}" width="${n3(it.w)}" height="${n3(it.h)}" fill="#000"/></mask>`);
+      body = `<g mask="url(#hole)">${body}</g>`;
+    } else if (it.t === "text") {
+      body += `<text x="${n3(it.x)}" y="${n3(it.y)}" text-anchor="middle" dominant-baseline="central" font-family="${escapeXml(FONT)}" font-weight="${it.weight}" font-size="${n3(it.size)}"${it.spacing ? ` letter-spacing="${n3(it.spacing)}"` : ""} fill="${escapeXml(it.fill)}">${escapeXml(it.text)}</text>`;
+    } else if (it.t === "icon") {
+      const tf = `translate(${n3(it.tf.x)} ${n3(it.tf.y)}) scale(${n3(it.tf.s)})`;
+      body += it.mode === "fill"
+        ? `<path transform="${tf}" d="${it.d}" fill="${escapeXml(it.fill)}"/>`
+        : `<path transform="${tf}" d="${it.d}" fill="none" stroke="${escapeXml(it.fill)}" stroke-width="${it.width}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    } else if (it.t === "image" && /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(it.src)) {
+      body += `<image href="${it.src}" x="${n3(it.x)}" y="${n3(it.y)}" width="${n3(it.w)}" height="${n3(it.h)}" preserveAspectRatio="xMidYMid meet"/>`;
+    }
+  }
+  const pw = Math.round(pixelWidth);
+  const ph = Math.round((pixelWidth * scene.h) / scene.w);
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n3(scene.w)} ${n3(scene.h)}" width="${pw}" height="${ph}">${defs.length ? `<defs>${defs.join("")}</defs>` : ""}${body}</svg>\n`;
+}
+
+function paintCanvas(scene, ctx, scale) {
+  const fillOf = (p) => {
+    if (typeof p === "string") return p;
+    let g;
+    if (p.type === "radial") g = ctx.createRadialGradient(p.x + p.w / 2, p.y + p.h / 2, 0, p.x + p.w / 2, p.y + p.h / 2, p.w * 0.72);
+    else { const [x1, y1, x2, y2] = gradientEnds(p); g = ctx.createLinearGradient(x1, y1, x2, y2); }
+    g.addColorStop(0, p.c1);
+    g.addColorStop(1, p.c2);
+    return g;
+  };
+  ctx.save();
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  for (const it of scene.items) {
+    if (it.t === "path") {
+      ctx.fillStyle = fillOf(it.fill);
+      ctx.fill(new Path2D(it.d), it.rule || "nonzero");
+    } else if (it.t === "stroke") {
+      ctx.strokeStyle = it.stroke;
+      ctx.lineWidth = it.width;
+      ctx.stroke(new Path2D(it.d));
+    } else if (it.t === "clear") {
+      ctx.clearRect(it.x, it.y, it.w, it.h);
+    } else if (it.t === "text") {
+      // Text is drawn at device scale so small captions stay crisp.
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.font = `${it.weight} ${it.size * scale}px ${FONT}`;
+      if ("letterSpacing" in ctx) ctx.letterSpacing = `${(it.spacing || 0) * scale}px`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = it.fill;
+      ctx.fillText(it.text, it.x * scale, it.y * scale);
+      ctx.restore();
+    } else if (it.t === "icon") {
+      ctx.save();
+      ctx.translate(it.tf.x, it.tf.y);
+      ctx.scale(it.tf.s, it.tf.s);
+      const p = new Path2D(it.d);
+      if (it.mode === "fill") { ctx.fillStyle = it.fill; ctx.fill(p); }
+      else { ctx.strokeStyle = it.fill; ctx.lineWidth = it.width; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.stroke(p); }
+      ctx.restore();
+    } else if (it.t === "image" && it.source) {
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(it.source, it.x, it.y, it.w, it.h);
+    }
+  }
+  ctx.restore();
+}
+
+function fileName(name, fallback) {
+  return (name || fallback).replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase().slice(0, 60) || "qr-code";
+}
+
+return { encode, levelsFor, buildPayload, assess, designNotes, buildScene, toSvg, paintCanvas, contrast, luminance,
+  safeColour, normaliseUrl, fileName, registrable, brandMismatch, byteCapacity, qrMatrix, SPECS, ICONS };
+})();
+
+if (typeof document !== "undefined") {
+  const $ = (id) => document.getElementById(id);
+  const C = QRCORE;
+  let kind = "url";
+  // The uploaded image lives only in this variable: it is never written anywhere and is
+  // dropped when the page closes or "Start over" is pressed.
+  let iconImage = null;
+  let current = null;
+
+  const FIELD_IDS = {
+    url: "f-url", text: "f-text", emailTo: "f-email-to", emailSubject: "f-email-subject", emailBody: "f-email-body",
+    phone: "f-phone", smsNum: "f-sms-num", smsMsg: "f-sms-msg", wifiSsid: "f-wifi-ssid", wifiEnc: "f-wifi-enc",
+    wifiPass: "f-wifi-pass", vcFirst: "f-vc-first", vcLast: "f-vc-last", vcOrg: "f-vc-org", vcTitle: "f-vc-title",
+    vcPhone: "f-vc-phone", vcEmail: "f-vc-email", vcUrl: "f-vc-url", vcAddress: "f-vc-address", vcNote: "f-vc-note",
+    geoLat: "f-geo-lat", geoLon: "f-geo-lon", evTitle: "f-ev-title", evStart: "f-ev-start", evEnd: "f-ev-end",
+    evLocation: "f-ev-location", evNotes: "f-ev-notes",
+  };
+  // Only the fields of the chosen type count, so text left behind in another tab can
+  // neither block nor end up in the code.
+  const KIND_FIELDS = {
+    url: ["url"], text: ["text"], email: ["emailTo", "emailSubject", "emailBody"], phone: ["phone"],
+    sms: ["smsNum", "smsMsg"], wifi: ["wifiSsid", "wifiEnc", "wifiPass"],
+    vcard: ["vcFirst", "vcLast", "vcOrg", "vcTitle", "vcPhone", "vcEmail", "vcUrl", "vcAddress", "vcNote"],
+    geo: ["geoLat", "geoLon"], event: ["evTitle", "evStart", "evEnd", "evLocation", "evNotes"],
+  };
+
+  function fields() {
+    const f = {};
+    for (const key of KIND_FIELDS[kind]) f[key] = $(FIELD_IDS[key]).value;
+    if (kind === "wifi") f.wifiHidden = $("f-wifi-hidden").checked;
+    return f;
+  }
+
+  const measureCtx = document.createElement("canvas").getContext("2d");
+  function measure(text, px) {
+    measureCtx.font = `800 ${px * 20}px ${"system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Arial, sans-serif"}`;
+    // Measured at 20x and scaled back, since tiny font sizes round badly.
+    return (measureCtx.measureText(text).width / 20) * 1.08;
+  }
+
+  function design() {
+    const fg = C.safeColour($("d-fg").value, "#111827");
+    return {
+      fill: $("d-fill").value,
+      fg,
+      fg2: C.safeColour($("d-fg2").value, "#3b5bdb"),
+      angle: Number($("d-angle").value) || 0,
+      bg: C.safeColour($("d-bg").value, "#ffffff"),
+      transparent: $("d-transparent").checked,
+      eyeCustom: $("d-eyecustom").checked,
+      eyeOuterCol: C.safeColour($("d-eye-outer-col").value, fg),
+      eyeInnerCol: C.safeColour($("d-eye-inner-col").value, fg),
+      module: $("d-module").value,
+      eyeOuter: $("d-eye-outer").value,
+      eyeInner: $("d-eye-inner").value,
+      icon: $("d-icon").value,
+      iconText: $("d-icon-text").value,
+      iconCol: C.safeColour($("d-icon-col").value, fg),
+      iconSize: Number($("d-icon-size").value) / 100,
+      plate: $("d-plate").value,
+      clear: $("d-clear").checked,
+      frame: $("d-frame").value,
+      caption: $("d-caption").value.slice(0, 28),
+      frameCol: C.safeColour($("d-frame-col").value, "#111827"),
+      captionCol: C.safeColour($("d-caption-col").value, "#ffffff"),
+      showAddress: $("d-address").checked,
+      ec: $("d-ec").value,
+      qz: Math.min(8, Math.max(1, Number($("d-qz").value) || 4)),
+    };
+  }
+
+  function syncVisibility(o) {
+    for (const fs of document.querySelectorAll("fieldset[data-for]")) fs.hidden = fs.dataset.for !== kind;
+    for (const b of document.querySelectorAll("#kinds button")) b.setAttribute("aria-pressed", String(b.dataset.kind === kind));
+    $("wifi-pass-wrap").hidden = $("f-wifi-enc").value === "nopass";
+    $("d-fg2-wrap").hidden = o.fill === "solid";
+    $("d-angle-wrap").hidden = o.fill !== "linear";
+    $("d-eyecol-wrap").hidden = !o.eyeCustom;
+    $("d-icon-text-wrap").hidden = o.icon !== "text";
+    $("d-icon-file-wrap").hidden = o.icon !== "image";
+    $("d-icon-col-wrap").hidden = o.icon === "none" || o.icon === "image";
+    $("d-caption-wrap").hidden = o.frame === "none";
+    $("d-frame-col-wrap").hidden = o.frame === "none";
+    $("d-address").closest("label").hidden = !(kind === "url");
+    $("d-qz-out").textContent = String(o.qz);
+  }
+
+  // The address printed under a code: just the site name, which is what people check.
+  function addressLine(o, payload) {
+    if (kind !== "url" || !o.showAddress || !payload) return "";
+    try { return new URL(payload).hostname.replace(/^www\./, ""); } catch { return ""; }
+  }
+
+  function setNotes(blocks, warns) {
+    const ul = $("notes");
+    ul.replaceChildren();
+    for (const [cls, list] of [["block", blocks], ["warn", warns]]) {
+      for (const msg of list) {
+        const li = document.createElement("li");
+        li.className = cls;
+        li.textContent = msg;
+        ul.append(li);
+      }
+    }
+  }
+
+  let scanTimer = 0;
+  let renderSeq = 0;
+
+  function render() {
+    const o = design();
+    syncVisibility(o);
+    const f = fields();
+    const payload = C.buildPayload(kind, f);
+    const { blocks, warns } = C.assess(kind, f);
+    const hasIcon = o.icon !== "none" && (o.icon !== "image" || iconImage);
+    const designWarns = payload ? C.designNotes({ ...o, icon: hasIcon ? o.icon : "none" }) : [];
+
+    const canvas = $("preview");
+    const box = $("preview-box");
+    const placeholder = $("placeholder");
+    let enc = null;
+    let blocked = blocks.length > 0;
+    if (payload && !blocked) {
+      enc = C.encode(payload, C.levelsFor(o.ec, hasIcon));
+      if (!enc) {
+        const levels = C.levelsFor(o.ec, hasIcon);
+        const max = C.byteCapacity(20, levels[levels.length - 1]);
+        const bytes = new TextEncoder().encode(payload).length;
+        blocks.push(`That is too much to fit in one code (${bytes} of ${max} bytes). Shorten it${hasIcon ? ", or remove the centre icon" : ""}.`);
+        blocked = true;
+      }
+    }
+    setNotes(blocks, [...warns, ...(blocked ? [] : designWarns)]);
+    box.classList.toggle("blocked", blocked && !!payload);
+
+    $("payload-wrap").hidden = !payload;
+    $("payload").textContent = payload;
+
+    const ready = !!enc && !blocked;
+    for (const id of ["dl-png", "dl-jpg", "dl-svg", "copy"]) $(id).disabled = !ready;
+    if (!ready) {
+      current = null;
+      canvas.hidden = true;
+      placeholder.hidden = false;
+      placeholder.textContent = !payload ? "Fill in the details to see your code." : "This code cannot be made. See the notes below.";
+      $("meta").textContent = "";
+      $("scan").textContent = "";
+      $("scan").className = "scan";
+      return;
+    }
+
+    const scene = C.buildScene({
+      ...o,
+      matrix: enc.matrix,
+      icon: hasIcon ? o.icon : "none",
+      iconImage,
+      address: addressLine(o, payload),
+      measure,
+    });
+    current = { scene, payload, o };
+
+    const target = 600;
+    const scale = target / scene.w;
+    canvas.width = target;
+    canvas.height = Math.round(scene.h * scale);
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    C.paintCanvas(scene, ctx, scale);
+    canvas.hidden = false;
+    placeholder.hidden = true;
+    const n = enc.matrix.length;
+    $("meta").textContent = `Version ${enc.version} · ${n}×${n} modules · error correction ${enc.level} · ${enc.bytes} of ${enc.capacity} bytes`;
+    scheduleScanCheck(scene, payload, ++renderSeq);
+  }
+
+  // Self-test: where the browser has a built-in barcode reader, read the finished code back
+  // and compare it with what was meant to go in. It runs locally like everything else.
+  let detector = null;
+  async function getDetector() {
+    if (detector !== null) return detector;
+    detector = false;
+    try {
+      if ("BarcodeDetector" in window) {
+        const formats = await window.BarcodeDetector.getSupportedFormats();
+        if (formats.includes("qr_code")) detector = new window.BarcodeDetector({ formats: ["qr_code"] });
+      }
+    } catch { detector = false; }
+    return detector;
+  }
+
+  function scheduleScanCheck(scene, payload, seq) {
+    clearTimeout(scanTimer);
+    const el = $("scan");
+    scanTimer = setTimeout(async () => {
+      const det = await getDetector();
+      if (seq !== renderSeq) return;
+      if (!det) {
+        el.className = "scan";
+        el.textContent = "Scan it with your phone before you print it.";
+        return;
+      }
+      // Test on a light backdrop, as a printed transparent code would be.
+      const c = document.createElement("canvas");
+      const scale = 600 / scene.w;
+      c.width = 600;
+      c.height = Math.round(scene.h * scale);
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, c.width, c.height);
+      C.paintCanvas(scene, ctx, scale);
+      try {
+        const found = await det.detect(c);
+        if (seq !== renderSeq) return;
+        const ok = found.some((b) => b.rawValue === payload);
+        el.className = ok ? "scan ok" : "scan fail";
+        el.textContent = ok
+          ? "✓ Checked: this browser read the code back and it matches."
+          : "✗ This browser could not read the code back. Try more contrast, a smaller icon or a plainer style.";
+      } catch {
+        el.className = "scan";
+        el.textContent = "Scan it with your phone before you print it.";
+      }
+    }, 350);
+  }
+
+  function rasterBlob(type) {
+    const { scene, o } = current;
+    const width = Number($("out-size").value) || 1024;
+    const scale = width / scene.w;
+    const c = document.createElement("canvas");
+    c.width = width;
+    c.height = Math.round(scene.h * scale);
+    const ctx = c.getContext("2d");
+    // JPEG has no transparency, so a transparent design gets its background colour back.
+    if (type === "image/jpeg") {
+      ctx.fillStyle = o.bg;
+      ctx.fillRect(0, 0, c.width, c.height);
+    }
+    C.paintCanvas(scene, ctx, scale);
+    return new Promise((resolve) => c.toBlob((b) => resolve(b), type, 0.95));
+  }
+
+  function save(blob, name) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  const baseName = () => C.fileName($("out-name").value, `qr-${kind}`);
+
+  $("dl-png").addEventListener("click", async () => { if (current) save(await rasterBlob("image/png"), `${baseName()}.png`); });
+  $("dl-jpg").addEventListener("click", async () => { if (current) save(await rasterBlob("image/jpeg"), `${baseName()}.jpg`); });
+  $("dl-svg").addEventListener("click", () => {
+    if (!current) return;
+    const width = Number($("out-size").value) || 1024;
+    save(new Blob([C.toSvg(current.scene, width)], { type: "image/svg+xml" }), `${baseName()}.svg`);
+  });
+  $("copy").addEventListener("click", async () => {
+    if (!current) return;
+    const btn = $("copy");
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": rasterBlob("image/png") })]);
+      btn.textContent = "Copied";
+    } catch {
+      btn.textContent = "Copy not supported";
+    }
+    setTimeout(() => { btn.textContent = "Copy image"; }, 1600);
+  });
+
+  $("kinds").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-kind]");
+    if (!b) return;
+    kind = b.dataset.kind;
+    render();
+  });
+
+  const ALLOWED_IMAGE = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+  $("d-icon-file").addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    const status = $("d-icon-file-status");
+    e.target.value = "";
+    if (!file) return;
+    if (!ALLOWED_IMAGE.has(file.type)) { status.textContent = "Please choose a PNG, JPEG, WebP or GIF image."; return; }
+    if (file.size > 5 * 1024 * 1024) { status.textContent = "That image is over 5 MB. Please choose a smaller one."; return; }
+    try {
+      const bmp = await createImageBitmap(file);
+      // Redraw at no more than 512 px. This shrinks the SVG and leaves behind any metadata
+      // or anything else smuggled inside the original file.
+      const k = Math.min(1, 512 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(bmp.width * k));
+      c.height = Math.max(1, Math.round(bmp.height * k));
+      c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+      bmp.close();
+      iconImage = { src: c.toDataURL("image/png"), w: c.width, h: c.height, source: c };
+      status.textContent = `Using your image (${c.width}×${c.height}). It stays on this device.`;
+    } catch {
+      iconImage = null;
+      status.textContent = "That file could not be read as an image.";
+    }
+    render();
+  });
+
+  for (const formId of ["content-panel", "design-panel"]) {
+    const form = $(formId);
+    form.addEventListener("input", render);
+    form.addEventListener("change", render);
+    form.addEventListener("submit", (e) => e.preventDefault());
+  }
+
+  $("reset").addEventListener("click", () => {
+    $("content-panel").reset();
+    $("design-panel").reset();
+    $("out-name").value = "";
+    iconImage = null;
+    $("d-icon-file-status").textContent = "The image is redrawn on this device, which also strips hidden details such as camera GPS data. It is never uploaded.";
+    kind = "url";
+    render();
+  });
+
+  // Some browsers restore form values when the page comes back from the back/forward
+  // cache; start clean so nothing typed earlier reappears.
+  window.addEventListener("pageshow", (e) => { if (e.persisted) $("reset").click(); });
+
+  render();
+}
+  </script>
+</body>
+</html>
